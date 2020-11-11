@@ -23,6 +23,7 @@ class Fraction
 	{
 		_numerator = f._numerator;
 		_denominator = f._denominator;
+		Reduce(*this);
 		return *this;
 	}
 
@@ -40,9 +41,7 @@ class Fraction
 			result._denominator = _denominator * f._denominator;
 		}
 
-		int gcd = GetGÑD(result._numerator, result._denominator);
-		result._numerator /= gcd;
-		result._denominator /= gcd;
+		Reduce(result);
 		Revers(result);
 		return result;
 	}
@@ -61,9 +60,7 @@ class Fraction
 			result._denominator = _denominator * f._denominator;
 		}
 
-		int gcd = GetGÑD(result._numerator, result._denominator);
-		result._numerator /= gcd;
-		result._denominator /= gcd;
+		Reduce(result);
 		Revers(result);
 		return result;
 	}
@@ -71,6 +68,7 @@ class Fraction
 	Fraction operator * (const Fraction& f1)
 	{
 		Fraction result(_numerator * f1._numerator, _denominator * f1._denominator);
+		Reduce(result);
 		Revers(result);
 		return result;
 	}
@@ -78,6 +76,7 @@ class Fraction
 	Fraction operator / (const Fraction& f)
 	{
 		Fraction result(_numerator * f._denominator, _denominator * f._numerator);
+		Reduce(result);
 		Revers(result);
 		return result;
 	}
@@ -106,6 +105,13 @@ class Fraction
 	}
 
 	private:
+
+	void Reduce(Fraction& f)
+	{
+		int gcd = GetGÑD(f._numerator, f._denominator);
+		f._numerator /= gcd;
+		f._denominator /= gcd;
+	}
 
 	void Revers(Fraction& f)
 	{
@@ -136,17 +142,15 @@ class Fraction
 	}
 };
 
-
 int main()
 {
 	setlocale(LC_ALL, "rus");
 
 	srand(time(0));
 
-	Fraction a(16, 10);
+	Fraction a(16, 13);
 
 	Fraction b(2, 5);
-	cout << a + b << endl;
-	
+		
 	return 0;
 }
