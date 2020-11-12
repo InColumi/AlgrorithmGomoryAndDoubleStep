@@ -34,23 +34,25 @@ class Fraction
 	private:
 	int _numerator;
 	int _denominator;
-
+	//int _wholePart;
 	public:
 	Fraction(): _numerator(), _denominator(1) {}
+
+	Fraction(int numerator): _numerator(numerator), _denominator(1) {}
 
 	Fraction(int numerator, int denominator)
 	{
 		CheckDenominator(denominator);
 		_numerator = numerator;
 		_denominator = denominator;
-		Revers(*this);
+		ReduceAndReves(*this);
 	}
 
 	Fraction& operator = (const Fraction& f)
 	{
 		_numerator = f._numerator;
 		_denominator = f._denominator;
-		Reduce(*this);
+		ReduceAndReves(*this);
 		return *this;
 	}
 
@@ -68,8 +70,7 @@ class Fraction
 			result._denominator = _denominator * f._denominator;
 		}
 
-		Reduce(result);
-		Revers(result);
+		ReduceAndReves(result);
 		return result;
 	}
 
@@ -87,25 +88,50 @@ class Fraction
 			result._denominator = _denominator * f._denominator;
 		}
 
-		Reduce(result);
-		Revers(result);
+		ReduceAndReves(result);
 		return result;
 	}
 
 	Fraction operator * (const Fraction& f1)
 	{
 		Fraction result(_numerator * f1._numerator, _denominator * f1._denominator);
-		Reduce(result);
-		Revers(result);
+		ReduceAndReves(result);
 		return result;
 	}
 
 	Fraction operator / (const Fraction& f)
 	{
 		Fraction result(_numerator * f._denominator, _denominator * f._numerator);
-		Reduce(result);
-		Revers(result);
+		ReduceAndReves(result);
 		return result;
+	}
+
+	Fraction operator / (const int& number)
+	{
+		CheckDenominator(number);
+		Fraction result(_numerator * 1, _denominator * number);
+		ReduceAndReves(result);
+		return result;
+	}
+
+	bool operator > (const Fraction& f1)
+	{
+		return _numerator > f1._numerator && _denominator <= f1._denominator;
+	}
+
+	bool operator < (const Fraction& f1)
+	{
+		return _numerator < f1._numerator && _denominator >= f1._denominator;
+	}
+
+	bool operator == (const Fraction& f1)
+	{
+		return _numerator == f1._numerator && _denominator == f1._denominator;
+	}
+
+	bool operator != (const Fraction& f1)
+	{
+		return (*this == f1) == false;
 	}
 
 	friend ostream& operator << (ostream& out, const Fraction& f)
@@ -132,6 +158,12 @@ class Fraction
 	}
 
 	private:
+
+	void ReduceAndReves(Fraction& f)
+	{
+		Reduce(f);
+		Revers(f);
+	}
 
 	void Reduce(Fraction& f)
 	{
@@ -240,9 +272,9 @@ class DoubleStep: Slitter
 class Simplex:Slitter
 {
 	private:
-	int** _matrix;
-	int _sizeRow;
-	int _sizeCol;
+	Fraction** _matrix;
+	size_t _sizeRow;
+	size_t _sizeCol;
 	string _type;
 	vector<string> _namesCols;
 	vector<string> _namesRows;
@@ -264,8 +296,87 @@ class Simplex:Slitter
 		delete[] _matrix;
 	}
 
-	
+	void Solve()
+	{
+		int indexColumnNewBazis = GetIndexMaxValueInZ();
+		int indexRowMinValueInDeferens = GetIndexMinDeferensInRow(indexColumnNewBazis);
+
+		_namesRows[indexRowMinValueInDeferens] = _namesCols[indexColumnNewBazis + 2];
+		ShowMatrix();
+		CreateNewRow(indexRowMinValueInDeferens, _matrix[indexRowMinValueInDeferens][indexColumnNewBazis]);
+		ShowMatrix();
+	}
+
 	private:
+
+	void CreateNewRow(int indexNewRow, Fraction currentValue)
+	{
+		for(size_t i = 0; i < _sizeCol; i++)
+		{
+			_matrix[indexNewRow][i] = _matrix[indexNewRow][i] / currentValue;
+		}
+	}
+
+	int GetIndexMinDeferensInRow(size_t indexCol)
+	{
+		Fraction min = _matrix[0][0] / _matrix[0][indexCol];
+		int index = 0;
+		Fraction value;
+		for(size_t i = 1; i < _sizeRow - 1; i++)
+		{
+			if(_matrix[i][indexCol].GetNumerator() > 0 )
+			{
+				value = _matrix[i][0] / _matrix[i][indexCol];
+				if(value < min)
+				{
+					index = i;
+					min = value;
+				}
+			}
+		}
+		return index;
+	}
+
+	int GetIndexMaxValueInZ()
+	{
+		int lastRow = _sizeRow - 1;
+		Fraction minMax = _matrix[lastRow][1];
+		int index = 1;
+		if(_type == "min")
+		{
+			for(size_t i = 2; i < _sizeCol; i++)
+			{
+				if(_matrix[lastRow][i] > minMax)
+				{
+					minMax = _matrix[lastRow][i];
+					index = i;
+				}
+			}
+		}
+		else if(_type == "max")
+		{
+			for(size_t i = 2; i < _sizeCol; i++)
+			{
+				if(_matrix[lastRow][i] < minMax)
+				{
+					minMax = _matrix[lastRow][i];
+					index = i;
+				}
+			}
+		}
+		else
+		{
+			cout << "Type must be min or max. Check file!\n";
+			exit(0);
+		}
+		
+		return index;
+	}
+
+	bool IsBazis(int indexColumn)
+	{
+		return _matrix[_sizeRow - 1][indexColumn] == 0;
+	}
 
 	void ReadFromFile(const string fileName)
 	{
@@ -284,7 +395,7 @@ class Simplex:Slitter
 		Split(splittedLine, line);
 		_sizeRow = stoi(splittedLine[0]);
 		_sizeCol = stoi(splittedLine[1]);
-		_type =  splittedLine[2];
+		_type = splittedLine[2];
 		MemoryAllocation(_matrix, _sizeRow, _sizeCol);
 		_namesRows = vector<string>(_sizeRow);
 
@@ -302,7 +413,7 @@ class Simplex:Slitter
 			_namesRows[row] = splittedLine[0];
 			for(size_t i = 1; i < _sizeCol + 1; i++)
 			{
-				_matrix[row][col++] = stoi(splittedLine[i]);
+				_matrix[row][col++] = Fraction(stoi(splittedLine[i]));
 			}
 			splittedLine.clear();
 			row++;
@@ -313,12 +424,12 @@ class Simplex:Slitter
 		ShowMatrix();
 	}
 
-	void MemoryAllocation(int** & matr, int sizeRow, int cols)
+	void MemoryAllocation(Fraction**& matr, size_t sizeRow, size_t cols)
 	{
-		matr = new int*[sizeRow];
+		matr = new Fraction * [sizeRow];
 		for(size_t i = 0; i < sizeRow; i++)
 		{
-			matr[i] = new int[cols];
+			matr[i] = new Fraction[cols];
 		}
 	}
 
@@ -338,14 +449,20 @@ class Simplex:Slitter
 			}
 			cout << '\n';
 		}
+		cout << '\n';
 	}
 };
 
 int main()
 {
 	setlocale(LC_ALL, "rus");
-	
+
 	//DoubleStep task1("input.txt");
 	Simplex s("inputSimplex.txt");
+	s.Solve();
+
+	/*Fraction a(1, 2);
+	cout << a / 2 << endl;*/
+
 	return 0;
 }
