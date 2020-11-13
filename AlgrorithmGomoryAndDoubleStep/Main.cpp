@@ -313,8 +313,8 @@ class Simplex:Slitter
 			_namesRows[indexRowMinValueInDeferens] = _namesColums[indexColumnNewBazis];
 			DivRowOn(indexRowMinValueInDeferens, _matrix[indexRowMinValueInDeferens][indexColumnNewBazis]);
 			ChangeMatrix(indexColumnNewBazis, indexRowMinValueInDeferens);
-			ShowTable();
 		}
+		ShowTable();
 	}
 
 	vector<vector<Fraction>> GetMatrix()
@@ -515,10 +515,10 @@ class Cell
 	public:
 	Cell(): _name(), _indexName(), _value() {};
 	Cell(string name, size_t indexName, int value): _name(name), _indexName(indexName), _value(value) {}
-	
+
 	friend ostream& operator << (ostream& out, const Cell& p)
 	{
-		out << '(' << p._name << '-' << p._indexName << '=' << p._value <<  ')';
+		out << '(' << p._name << '-' << p._indexName << '=' << p._value << ')';
 		return out;
 	}
 
@@ -578,7 +578,6 @@ class DoubleStep: Slitter, Shower
 		Show(_matrix, _rows, _colums);
 		SetNamesRows();
 		SetNewZ();
-		Show(_matrix, _rows, _colums);
 
 	}
 
@@ -592,6 +591,46 @@ class DoubleStep: Slitter, Shower
 		_namesColums = simplex.GetNamesColmuns();
 		_namesRows = simplex.GetNamesRows();
 		_matrix = simplex.GetMatrix();
+
+		MakeLastMatrix();
+	}
+
+	void MakeLastMatrix()
+	{
+		vector<vector<Fraction>> newMatrix;
+		size_t newColums = _colums - _countArtificialVariable;
+		for(size_t i = 0; i < _rows; i++)
+		{
+			newMatrix.push_back(vector<Fraction>(newColums));
+		}
+
+		size_t indexRows = 0;
+		size_t indexColums = 0;
+
+		for(size_t i = 0; i < _rows; i++)
+		{
+			for(size_t j = 0; j < _colums; j++)
+			{
+				if(_namesColums[j][0] != _nameArtificialVariable[0])
+				{
+					newMatrix[indexRows][indexColums++] = _matrix[i][j];
+				}
+			}
+			indexRows++;
+			indexColums = 0;
+		}
+
+		vector<string> newNamesColums;
+		for(size_t i = 0; i < _namesColums.size(); i++)
+		{
+			if(_namesColums[i][0] != _nameArtificialVariable[0])
+			{
+				newNamesColums.push_back(_namesColums[i]);
+			}
+		}
+		_matrix = newMatrix;
+		_colums = newColums;
+		_namesColums = newNamesColums;
 	}
 
 	private:
