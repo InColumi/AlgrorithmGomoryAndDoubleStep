@@ -137,9 +137,9 @@ class Fraction
 		return Fraction(_numerator * (-1), _denominator);
 	}
 
-	Fraction operator * (const Fraction& f1)
+	Fraction operator * (const Fraction& f)
 	{
-		Fraction result(_numerator * f1._numerator, _denominator * f1._denominator);
+		Fraction result(_numerator * f._numerator, _denominator * f._denominator);
 		ReduceAndReves(result);
 		return result;
 	}
@@ -159,36 +159,46 @@ class Fraction
 		return result;
 	}
 
-	bool operator > (const Fraction& f1)
+	bool operator > (const Fraction& f)
 	{
-		if(_denominator == f1._denominator)
+		if(_denominator == f._denominator)
 		{
-			return _numerator > f1._numerator;
+			return _numerator > f._numerator;
 		}
-		else if(_numerator == f1._numerator)
+		else if(_numerator == f._numerator)
 		{
-			return _denominator < f1._denominator;
+			return _denominator < f._denominator;
 		}
 		else
 		{
-			int lcm = GetLCM(_denominator, f1._denominator);
-			return _numerator * lcm / _denominator > f1._numerator * lcm / f1._denominator;
+			int lcm = GetLCM(_denominator, f._denominator);
+			return _numerator * lcm / _denominator > f._numerator * lcm / f._denominator;
 		}
 	}
-
-	bool operator < (const Fraction& f1)
+	
+	bool operator >= (const Fraction& f)
 	{
-		return (*this > f1) == false;
+		return *this > f || *this == f;
 	}
 
-	bool operator == (const Fraction& f1)
+	bool operator <= (const Fraction& f)
 	{
-		return _numerator == f1._numerator && _denominator == f1._denominator;
+		return *this < f || *this == f;
 	}
 
-	bool operator != (const Fraction& f1)
+	bool operator < (const Fraction& f)
 	{
-		return (*this == f1) == false;
+		return (*this > f) == false;
+	}
+
+	bool operator == (const Fraction& f)
+	{
+		return _numerator == f._numerator && _denominator == f._denominator;
+	}
+
+	bool operator != (const Fraction& f)
+	{
+		return (*this == f) == false;
 	}
 
 	friend ostream& operator << (ostream& out, const Fraction& f)
@@ -567,7 +577,7 @@ class DoubleStep: Slitter, Shower
 	const string _nameInitialVariable = "x";
 	const string _nameSimpleVariable = "s";
 	const string _nameArtificialVariable = "r";
-	Fraction** _matrixOfRestriction;
+	vector<vector<Fraction>> _matrix;
 	vector<string> _textFromFile;
 	vector<string> _namesColums;
 	vector<string> _namesRows;
@@ -583,16 +593,29 @@ class DoubleStep: Slitter, Shower
 	DoubleStep(const string fileName)
 	{
 		_textFromFile = ReadFromFile(fileName);
+		SetTargetFunction(_textFromFile[0]);
+		SetCountInitialVariable(_textFromFile[1]);
+		CheckCorrectInput();
+
+		_rows = _textFromFile.size();
 		Show(_textFromFile);
-		SetTargetFunction();
 		CheckTypeOfTask();
 		_countInitialVariable = _targetFunction.size();
 		SetNamesColums();
-		AddNewVariables();
+		SetInitialMatrix();
+		AddNamesToColumnsAndCountNewVariables();
 		Show(_namesColums);
+		SetMatrix();
 	}
 
 	private:
+
+	void SetCountInitialVariable(string line)
+	{
+		vector<string> splittedLine;
+		Split(splittedLine, line);
+		_countInitialVariable = splittedLine.size() - 2;
+	}
 
 	void SetNamesColums()
 	{
@@ -602,34 +625,103 @@ class DoubleStep: Slitter, Shower
 		}
 	}
 
-	void AddNewVariables()
+	void SetInitialMatrix()
 	{
-		_countSimpleVariable = 1;
-		_countArtificialVariable = 1;
+		vector<string> splittedLine;
+		size_t size;
+		for(size_t i = 0; i < _rows; i++)
+		{
+			_matrix.push_back(vector<Fraction>(_countInitialVariable));
+		}
+
+		for(size_t i = 1; i < _textFromFile.size(); i++)
+		{
+			Split(splittedLine, _textFromFile[i]);
+
+			size_t size = splittedLine.size();
+			for(size_t j = 0; j < size - 2; j++)
+			{
+				_matrix[i - 1][j] = stoi(splittedLine[j]);
+			}
+			splittedLine.clear();
+		}
+	}
+
+	void SetMatrix()
+	{
+		_colums = _countInitialVariable + _countSimpleVariable + _countArtificialVariable;
+		vector<string> splittedLine;
+		size_t size;
+		for(size_t i = 0; i < _rows; i++)
+		{
+			_matrix.push_back(vector<Fraction>(_colums));
+		}
+
+		for(size_t i = 1; i < _textFromFile.size(); i++)
+		{
+			Split(splittedLine, _textFromFile[i]);
+
+			size_t size = splittedLine.size();
+			for(size_t j = 0; j < size - 2; j++)
+			{
+				_matrix[i - 1][j] = stoi(splittedLine[j]);
+			}
+			_matrix[i - 1][size - 2] = stoi(splittedLine[size - 1]);
+			splittedLine.clear();
+		}
+	}
+
+	void AddNamesToColumnsAndCountNewVariables()
+	{
+		_countSimpleVariable = 0;
+		_countArtificialVariable = 0;
 		vector<string> splittedLine;
 		size_t size;
 		string sing;
 		for(size_t i = 1; i < _textFromFile.size(); i++)
 		{
 			Split(splittedLine, _textFromFile[i]);
-			size_t size = splittedLine.size();
+
+			size = splittedLine.size();
 			sing = splittedLine[size - 2];
 			if(sing == "<=")
 			{
-				_namesColums.push_back(_nameSimpleVariable + to_string(_countSimpleVariable));
-				++_countSimpleVariable;
+				_namesColums.push_back(_nameSimpleVariable + to_string(++_countSimpleVariable));
 			}
 			else if(sing == ">=")
 			{
-				_namesColums.push_back(_nameSimpleVariable + to_string(_countSimpleVariable));
-				_namesColums.push_back(_nameArtificialVariable + to_string(_countArtificialVariable));
-				++_countArtificialVariable;
-				++_countSimpleVariable;
+				_namesColums.push_back(_nameSimpleVariable + to_string(++_countSimpleVariable));
+				_namesColums.push_back(_nameArtificialVariable + to_string(++_countArtificialVariable));
 			}
 			else if(sing == "=")
 			{
-				++_countArtificialVariable;
-				_namesColums.push_back(_nameArtificialVariable + to_string(_countArtificialVariable));
+				for(size_t k = 0; k < _countInitialVariable; k++)
+				{
+					int countVariable = 0;
+					int indexRow;
+					for(size_t j = 0; j < _rows; j++)
+					{
+						if(_matrix[j][k] != 0)
+						{
+							++countVariable;
+							indexRow = j;
+						}
+						if(countVariable > 1)
+						{
+							countVariable = 0;
+							break;
+						}
+					}
+					if(countVariable >= 1 && _matrix[indexRow][i] <= 0)
+					{
+						_namesColums.push_back(_nameArtificialVariable + to_string(++_countArtificialVariable));
+					}
+					else if(countVariable >= 1 && _matrix[indexRow][i] <= 0)
+					{
+
+					}
+				}
+
 			}
 			else
 			{
@@ -653,22 +745,24 @@ class DoubleStep: Slitter, Shower
 		return _typeOfTask == "min" || _typeOfTask == "max";
 	}
 
-	void SetTypeOfTask(string type)
-	{
-		_typeOfTask = type;
-	}
-
-	void SetTargetFunction()
+	void SetTargetFunction(string line)
 	{
 		vector<string> splittedLine;
-		Split(splittedLine, _textFromFile[0]);
-		SetTypeOfTask(splittedLine.back());
+		Split(splittedLine, line);
+		_typeOfTask = splittedLine.back();
 
-		size_t size = splittedLine.size() - 1;
-		_targetFunction = vector<int>(size);
-		for(size_t i = 0; i < size; i++)
+		for(size_t i = 0; i < splittedLine.size() - 1; i++)
 		{
-			_targetFunction[i] = stoi(splittedLine[i]);
+			_targetFunction.push_back(stoi(splittedLine[i]));
+		}
+	}
+
+	void CheckCorrectInput()
+	{
+		if(_targetFunction.size() != _countInitialVariable)
+		{
+			cout << "Кол-во переменных в целевой функции не совпадает с кол-вом переменных в матрице. Проверьте файл!\n";
+			exit(0);
 		}
 	}
 
@@ -719,3 +813,18 @@ int main()
 //r4 0 2 - 3 0 0 0 0 0 0 0 0 0 0 1 0
 //r5 0 0 5 - 2 0 0 0 0 0 0 0 0 0 0 1
 //Z 550 3 3 - 1 0 0 0 - 1 - 1 - 1 0 0 0 0 0
+
+//30 20 50 max
+//2 3 5 <= 4000
+//4 2 7 <= 6000
+//6 3 2 <= 9000
+//1 0 0 >= 200
+//0 1 0 >= 200
+//0 0 1 >= 150
+//2 - 3 0 = 0
+//0 5 - 2 = 0
+
+//4 2 0 0 min
+//3 1 0 0 = 3
+//4 3 -1 0 = 6
+//1 2 0 1 = 4
