@@ -310,9 +310,10 @@ class Simplex:Slitter
 			int indexColumnNewBazis = GetIndexMaxCellInZ();
 			int indexRowMinValueInDeferens = GetIndexMinDeferensInRow(indexColumnNewBazis);
 
-			_namesRows[indexRowMinValueInDeferens] = _namesColums[indexColumnNewBazis + 2];
+			_namesRows[indexRowMinValueInDeferens] = _namesColums[indexColumnNewBazis];
 			DivRowOn(indexRowMinValueInDeferens, _matrix[indexRowMinValueInDeferens][indexColumnNewBazis]);
 			ChangeMatrix(indexColumnNewBazis, indexRowMinValueInDeferens);
+			ShowTable();
 		}
 	}
 
@@ -502,7 +503,6 @@ class Simplex:Slitter
 			}
 		}
 	}
-
 };
 
 class Cell
