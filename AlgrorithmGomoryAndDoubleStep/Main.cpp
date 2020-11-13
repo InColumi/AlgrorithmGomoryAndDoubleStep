@@ -325,9 +325,7 @@ class Simplex:Slitter
 			_namesRows[indexRowMinValueInDeferens] = _namesColums[indexColumnNewBazis];
 			DivRowOn(indexRowMinValueInDeferens, _matrix[indexRowMinValueInDeferens][indexColumnNewBazis]);
 			ChangeMatrix(indexColumnNewBazis, indexRowMinValueInDeferens);
-
 		}
-		ShowTable();
 	}
 
 	vector<vector<Fraction>> GetMatrix()
@@ -579,7 +577,6 @@ class DoubleStep: Slitter, Shower
 		SetTargetFunction(_textFromFile[0]);
 		SetCountInitialVariable(_textFromFile[1]);
 		CheckCorrectInput();
-
 		_rows = _textFromFile.size();
 		Show(_textFromFile);
 		CheckTypeOfTask();
@@ -588,8 +585,6 @@ class DoubleStep: Slitter, Shower
 		SetInitialMatrix();
 		AddNamesToColumnsAndCountNewVariables();
 		SetMatrix();
-		//Show(_namesColums);
-		Show(_matrix, _rows, _colums);
 		SetNamesRows();
 		SetNewZ();
 
@@ -600,17 +595,15 @@ class DoubleStep: Slitter, Shower
 		Simplex simplex(_matrix, _rows, _colums, "min", _namesColums, _namesRows);
 		simplex.ShowTable();
 		simplex.Solve();
-		simplex.ShowTable();
 
 		_namesColums = simplex.GetNamesColmuns();
 		_namesRows = simplex.GetNamesRows();
 		_matrix = simplex.GetMatrix();
 
 		MakeLastMatrix();
-
 		CreateLastRowForSecondStep();
+
 		simplex = Simplex(_matrix, _rows, _colums, _typeOfTask, _namesColums, _namesRows);
-		simplex.ShowTable();
 		simplex.Solve();
 		simplex.ShowTable();
 	}
@@ -624,7 +617,6 @@ class DoubleStep: Slitter, Shower
 		{
 			_matrix[_rows - 1][i + 1] = _targetFunction[i] * -1;
 		}
-		Show(_matrix, _rows, _colums);
 		size_t indexRow = 0;
 
 		vector<string> namesTargetFunction;
@@ -653,7 +645,6 @@ class DoubleStep: Slitter, Shower
 				}
 			}
 		}
-		Show(_matrix, _rows, _colums);
 	}
 
 	void MakeLastMatrix()
