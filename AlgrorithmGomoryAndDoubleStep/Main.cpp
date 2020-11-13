@@ -351,6 +351,7 @@ class Simplex:Slitter
 		}
 		cout << '\n';
 	}
+
 	private:
 
 	bool IsOptimalPlan()
@@ -549,7 +550,7 @@ class DoubleStep: Slitter, Shower
 	vector<string> _textFromFile;
 	vector<string> _namesColums;
 	vector<string> _namesRows;
-	vector<int> _targetFunction;
+	vector<Fraction> _targetFunction;
 	vector<Cell> _cells;
 	string _typeOfTask;
 	size_t _countInitialVariable;
@@ -593,6 +594,59 @@ class DoubleStep: Slitter, Shower
 		_matrix = simplex.GetMatrix();
 
 		MakeLastMatrix();
+
+		CreateLastRowForSecondStep();
+
+	}
+
+
+	private:
+
+	void CreateLastRowForSecondStep()
+	{
+		for(size_t i = 0; i < _targetFunction.size(); i++)
+		{
+			_matrix[_rows - 1][i + 1] = _targetFunction[i] * -1;
+		}
+		Show(_matrix, _rows, _colums);
+		size_t indexRow = 0;
+
+		for(size_t i = 0; i < _targetFunction.size(); i++)
+		{
+			for(size_t j = 0; j < _rows; j++)
+			{
+				if(_namesRows[j][0] == _nameInitialVariable[0] && _namesRows[j][1] == to_string(i + 1)[0])
+				{
+					for(size_t k = 0; k < _colums; k++)
+					{
+						cout <<  _matrix[j][k] << '*' << _targetFunction[i] << '+' << _matrix[_rows - 1][k];
+						_matrix[_rows - 1][k] = _matrix[j][k] * _targetFunction[i] + _matrix[_rows - 1][k];
+						cout << '=' << _matrix[_rows - 1][k] << endl;
+					}
+					Show(_matrix, _rows, _colums);
+					indexRow++;
+					i = -1;
+					break;
+				}
+			}
+		}
+
+		//size_t index = 0;
+		//for(size_t i = 0; i < _rows; i++)
+		//{
+		//	if(_namesRows[i][0] == _nameInitialVariable[0])
+		//	{
+		//		for(size_t j = 0; j < _colums; j++)
+		//		{
+		//			//cout <<  _matrix[i][j] << '*' << _targetFunction[index] << '+' << _matrix[_rows - 1][j];
+		//			_matrix[_rows - 1][j] =  _matrix[i][j] * _targetFunction[index] + _matrix[_rows - 1][j];
+		//			//cout << '=' << _matrix[_rows - 1][j] << endl;
+		//		}
+		//		Show(_matrix[_rows - 1]);
+		//		index++;
+		//	}
+		//}
+		Show(_matrix, _rows, _colums);
 	}
 
 	void MakeLastMatrix()
@@ -632,8 +686,6 @@ class DoubleStep: Slitter, Shower
 		_colums = newColums;
 		_namesColums = newNamesColums;
 	}
-
-	private:
 
 	vector<Fraction> GetFirstZ()
 	{
