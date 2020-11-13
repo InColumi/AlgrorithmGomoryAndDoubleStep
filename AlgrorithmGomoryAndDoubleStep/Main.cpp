@@ -610,6 +610,7 @@ class DoubleStep: Slitter, Shower
 	const string _nameInitialVariable = "x";
 	const string _nameSimpleVariable = "s";
 	const string _nameArtificialVariable = "r";
+	const string _nameLastRow = "Z";
 	vector<vector<Fraction>> _matrix;
 	vector<string> _textFromFile;
 	vector<string> _namesColums;
@@ -638,9 +639,9 @@ class DoubleStep: Slitter, Shower
 		SetNamesColums();
 		SetInitialMatrix();
 		AddNamesToColumnsAndCountNewVariables();
-		Show(_namesColums);
-		Show(_cells);
 		SetMatrix();
+		Show(_matrix, _rows, _colums);
+		SetNamesRows();
 	}
 
 	private:
@@ -690,6 +691,42 @@ class DoubleStep: Slitter, Shower
 		}
 	}
 
+	void SetNamesRows()
+	{
+		for(size_t i = 1; i < _colums; i++)
+		{
+			if(IsBazis(i))
+			{
+				_namesRows.push_back(_namesColums[i]);
+			}
+		}
+		_namesRows.push_back(_nameLastRow);
+	}
+
+	bool IsBazis(size_t indexCol)
+	{
+		Fraction number = 0;
+		int countZero = 0;
+		int countAnotherValue = 0;
+		for(size_t i = 0; i < _rows; i++)
+		{
+			if(countAnotherValue == 2)
+			{
+				return false;
+			}
+			if(_matrix[i][indexCol] == 0)
+			{
+				countZero++;
+			}
+			else
+			{
+				number = _matrix[i][indexCol];
+				countAnotherValue++;
+			}
+		}
+		return number == 1;
+	}
+
 	void SetMatrix()
 	{
 		_matrix.clear();
@@ -713,8 +750,6 @@ class DoubleStep: Slitter, Shower
 			}
 			splittedLine.clear();
 		}
-		Show(_matrix, _matrix.size(), _matrix[0].size());
-		int a = 0;
 
 		int index;
 		for(size_t i = _countInitialVariable; i < _colums; i++)
@@ -728,8 +763,6 @@ class DoubleStep: Slitter, Shower
 					break;
 				}
 			}
-			Show(_matrix, _matrix.size(), _matrix[0].size());
-			cout << endl;
 		}
 	}
 
