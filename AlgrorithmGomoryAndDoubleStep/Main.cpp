@@ -640,11 +640,51 @@ class DoubleStep: Slitter, Shower
 		SetInitialMatrix();
 		AddNamesToColumnsAndCountNewVariables();
 		SetMatrix();
+		//Show(_namesColums);
 		Show(_matrix, _rows, _colums);
 		SetNamesRows();
+		CreteNewZ();
 	}
 
 	private:
+
+	vector<Fraction> GetFirstZ()
+	{
+		vector<Fraction> z(_colums);
+
+		for(size_t i = 0; i < _colums; i++)
+		{
+			if(_namesColums[i][0] == _nameArtificialVariable[0])
+			{
+				z[i] = -1;
+			}
+		}
+		return z;
+	}
+
+	void CreteNewZ()
+	{
+		vector<Fraction> z = GetFirstZ();
+		for(size_t i = 0; i < _cells.size(); i++)
+		{
+			if(_cells[i].GetName()[0] == _nameArtificialVariable[0])
+			{
+				for(size_t j = 0; j < _colums; j++)
+				{
+					z[j] = z[j] + _matrix[_cells[i].GetIndex()][j];
+				}
+			}
+		}
+		Show(z);
+	}
+
+	void SumRows(vector<Fraction>& row1, vector<Fraction> row2)
+	{
+		for(size_t i = 0; i < _colums; i++)
+		{
+			row1[i] = row1[i] + row2[i];
+		}
+	}
 
 	void SetCountInitialVariable(string line)
 	{
@@ -744,9 +784,9 @@ class DoubleStep: Slitter, Shower
 
 			size_t size = splittedLine.size();
 			_matrix[i - 1][0] = stoi(splittedLine[size - 1]);
-			for(size_t j = 1; j < size - 2; j++)
+			for(size_t j = 0; j < size - 2; j++)
 			{
-				_matrix[i - 1][j] = stoi(splittedLine[j]);
+				_matrix[i - 1][j + 1] = stoi(splittedLine[j]);
 			}
 			splittedLine.clear();
 		}
