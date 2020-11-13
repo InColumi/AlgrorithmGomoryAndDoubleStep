@@ -564,16 +564,18 @@ class Simplex:Slitter
 class DoubleStep: Slitter, Shower
 {
 	private:
-	const string _nameVariable = "x";
+	const string _nameInitialVariable = "x";
+	const string _nameSimpleVariable = "s";
+	const string _nameArtificialVariable = "r";
 	Fraction** _matrixOfRestriction;
 	vector<string> _textFromFile;
 	vector<string> _namesColums;
 	vector<string> _namesRows;
 	vector<int> _targetFunction;
 	string _typeOfTask;
-	size_t _initialVariable;
-	size_t _simpleVariable;
-	size_t _artificialVariable;
+	size_t _countInitialVariable;
+	size_t _countSimpleVariable;
+	size_t _countArtificialVariable;
 	size_t _rows;
 	size_t _colums;
 
@@ -584,18 +586,26 @@ class DoubleStep: Slitter, Shower
 		Show(_textFromFile);
 		SetTargetFunction();
 		CheckTypeOfTask();
-		_initialVariable = _targetFunction.size();
+		_countInitialVariable = _targetFunction.size();
+		SetNamesColums();
 		AddNewVariables();
+		Show(_namesColums);
 	}
 
 	private:
 
-
+	void SetNamesColums()
+	{
+		for(size_t i = 1; i <= _countInitialVariable; i++)
+		{
+			_namesColums.push_back(_nameInitialVariable + to_string(i));
+		}
+	}
 
 	void AddNewVariables()
 	{
-		_simpleVariable = 0;
-		_artificialVariable = 0;
+		_countSimpleVariable = 1;
+		_countArtificialVariable = 1;
 		vector<string> splittedLine;
 		size_t size;
 		string sing;
@@ -606,16 +616,20 @@ class DoubleStep: Slitter, Shower
 			sing = splittedLine[size - 2];
 			if(sing == "<=")
 			{
-				_simpleVariable++;
+				_namesColums.push_back(_nameSimpleVariable + to_string(_countSimpleVariable));
+				++_countSimpleVariable;
 			}
 			else if(sing == ">=")
 			{
-				_artificialVariable++;
-				_simpleVariable++;
+				_namesColums.push_back(_nameSimpleVariable + to_string(_countSimpleVariable));
+				_namesColums.push_back(_nameArtificialVariable + to_string(_countArtificialVariable));
+				++_countArtificialVariable;
+				++_countSimpleVariable;
 			}
 			else if(sing == "=")
 			{
-				_artificialVariable++;
+				++_countArtificialVariable;
+				_namesColums.push_back(_nameArtificialVariable + to_string(_countArtificialVariable));
 			}
 			else
 			{
