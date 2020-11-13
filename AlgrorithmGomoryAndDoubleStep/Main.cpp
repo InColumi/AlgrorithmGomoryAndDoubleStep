@@ -191,7 +191,19 @@ class Fraction
 
 	bool operator < (const Fraction& f)
 	{
-		return (*this > f) == false;
+		if(_denominator == f._denominator)
+		{
+			return _numerator < f._numerator;
+		}
+		else if(_numerator == f._numerator)
+		{
+			return _denominator > f._denominator;
+		}
+		else
+		{
+			int lcm = GetLCM(_denominator, f._denominator);
+			return _numerator * lcm / _denominator < f._numerator * lcm / f._denominator;
+		}
 	}
 
 	bool operator == (const Fraction& f)
@@ -201,7 +213,7 @@ class Fraction
 
 	bool operator != (const Fraction& f)
 	{
-		return (*this == f) == false;
+		return _numerator != f._numerator || _denominator != f._denominator;
 	}
 
 	friend ostream& operator << (ostream& out, const Fraction& f)
@@ -313,6 +325,7 @@ class Simplex:Slitter
 			_namesRows[indexRowMinValueInDeferens] = _namesColums[indexColumnNewBazis];
 			DivRowOn(indexRowMinValueInDeferens, _matrix[indexRowMinValueInDeferens][indexColumnNewBazis]);
 			ChangeMatrix(indexColumnNewBazis, indexRowMinValueInDeferens);
+
 		}
 		ShowTable();
 	}
@@ -596,7 +609,10 @@ class DoubleStep: Slitter, Shower
 		MakeLastMatrix();
 
 		CreateLastRowForSecondStep();
-
+		simplex = Simplex(_matrix, _rows, _colums, _typeOfTask, _namesColums, _namesRows);
+		simplex.ShowTable();
+		simplex.Solve();
+		simplex.ShowTable();
 	}
 
 
@@ -630,29 +646,13 @@ class DoubleStep: Slitter, Shower
 					{
 						_matrix[_rows - 1][j] = _matrix[i][j] * _targetFunction.back() + _matrix[_rows - 1][j];
 					}
-					Show(_matrix, _rows, _colums);
+					
 					_targetFunction.pop_back();
 					namesTargetFunction.pop_back();
 					break;
 				}
 			}
 		}
-
-		//size_t index = 0;
-		//for(size_t i = 0; i < _rows; i++)
-		//{
-		//	if(_namesRows[i][0] == _nameInitialVariable[0])
-		//	{
-		//		for(size_t j = 0; j < _colums; j++)
-		//		{
-		//			//cout <<  _matrix[i][j] << '*' << _targetFunction[index] << '+' << _matrix[_rows - 1][j];
-		//			_matrix[_rows - 1][j] =  _matrix[i][j] * _targetFunction[index] + _matrix[_rows - 1][j];
-		//			//cout << '=' << _matrix[_rows - 1][j] << endl;
-		//		}
-		//		Show(_matrix[_rows - 1]);
-		//		index++;
-		//	}
-		//}
 		Show(_matrix, _rows, _colums);
 	}
 
