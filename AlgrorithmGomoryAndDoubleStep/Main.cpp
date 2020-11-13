@@ -304,7 +304,7 @@ class Simplex:Slitter
 	size_t _rows;
 	size_t _columns;
 	string _type;
-	vector<string> _namesCols;
+	vector<string> _namesColums;
 	vector<string> _namesRows;
 	public:
 	Simplex(string fileName/*, vector<string> namesCols, vector<string> namesRows*/)
@@ -331,11 +331,21 @@ class Simplex:Slitter
 			int indexColumnNewBazis = GetIndexMaxCellInZ();
 			int indexRowMinValueInDeferens = GetIndexMinDeferensInRow(indexColumnNewBazis);
 
-			_namesRows[indexRowMinValueInDeferens] = _namesCols[indexColumnNewBazis + 2];
+			_namesRows[indexRowMinValueInDeferens] = _namesColums[indexColumnNewBazis + 2];
 			DivRowOn(indexRowMinValueInDeferens, _matrix[indexRowMinValueInDeferens][indexColumnNewBazis]);
 			ChangeMatrix(indexColumnNewBazis, indexRowMinValueInDeferens);
 		}
 		ShowTable();
+	}
+
+	vector<string> GetNamesColmuns()
+	{
+		return _namesColums;
+	}
+
+	vector<string> GetNamesRows()
+	{
+		return _namesRows;
 	}
 
 	private:
@@ -518,7 +528,7 @@ class Simplex:Slitter
 		_namesRows = vector<string>(_rows);
 
 		getline(in, line);
-		Split(_namesCols, line);
+		Split(_namesColums, line);
 
 		splittedLine.clear();
 		int size;
@@ -553,9 +563,9 @@ class Simplex:Slitter
 
 	void ShowTable()
 	{
-		for(size_t i = 0; i < _namesCols.size(); i++)
+		for(size_t i = 0; i < _namesColums.size(); i++)
 		{
-			cout << _namesCols[i] << '\t';
+			cout << _namesColums[i] << '\t';
 		}
 		cout << '\n';
 		for(size_t i = 0; i < _rows; i++)
