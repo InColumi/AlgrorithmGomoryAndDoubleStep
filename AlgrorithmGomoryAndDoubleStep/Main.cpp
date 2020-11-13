@@ -611,21 +611,28 @@ class DoubleStep: Slitter, Shower
 		Show(_matrix, _rows, _colums);
 		size_t indexRow = 0;
 
+		vector<string> namesTargetFunction;
 		for(size_t i = 0; i < _targetFunction.size(); i++)
 		{
-			for(size_t j = 0; j < _rows; j++)
+			namesTargetFunction.push_back(_namesColums[i + 1]);
+		}
+
+		size_t indexColums = 0;
+		size_t oldColums = 0;
+
+		while(namesTargetFunction.empty() == false)
+		{
+			for(size_t i = 0; i < _rows; i++)
 			{
-				if(_namesRows[j][0] == _nameInitialVariable[0] && _namesRows[j][1] == to_string(i + 1)[0])
+				if(namesTargetFunction.back() == _namesRows[i])
 				{
-					for(size_t k = 0; k < _colums; k++)
+					for(size_t j = 0; j < _colums; j++)
 					{
-						cout <<  _matrix[j][k] << '*' << _targetFunction[i] << '+' << _matrix[_rows - 1][k];
-						_matrix[_rows - 1][k] = _matrix[j][k] * _targetFunction[i] + _matrix[_rows - 1][k];
-						cout << '=' << _matrix[_rows - 1][k] << endl;
+						_matrix[_rows - 1][j] = _matrix[i][j] * _targetFunction.back() + _matrix[_rows - 1][j];
 					}
 					Show(_matrix, _rows, _colums);
-					indexRow++;
-					i = -1;
+					_targetFunction.pop_back();
+					namesTargetFunction.pop_back();
 					break;
 				}
 			}
