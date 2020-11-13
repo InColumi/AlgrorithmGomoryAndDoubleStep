@@ -571,6 +571,27 @@ class Simplex:Slitter
 	}
 };
 
+class Pair
+{
+	private:
+	string _name;
+	size_t _indexName;
+
+	public:
+	Pair(): _name(), _indexName() {};
+	Pair(string name, size_t value): _name(name), _indexName(value){}
+	
+	string GetName()
+	{
+		return _name;
+	}
+
+	size_t GetIndexName()
+	{
+		return _indexName;
+	}
+};
+
 class DoubleStep: Slitter, Shower
 {
 	private:
@@ -582,6 +603,7 @@ class DoubleStep: Slitter, Shower
 	vector<string> _namesColums;
 	vector<string> _namesRows;
 	vector<int> _targetFunction;
+	vector<Pair> _pairs;
 	string _typeOfTask;
 	size_t _countInitialVariable;
 	size_t _countSimpleVariable;
@@ -692,28 +714,32 @@ class DoubleStep: Slitter, Shower
 
 			size = splittedLine.size();
 			sing = splittedLine[size - 2];
+			string nameNewSipmleVariable;
+			string nameNewArtificialVariable;
 			if(sing == "<=")
 			{
-				_namesColums.push_back(_nameSimpleVariable + to_string(++_countSimpleVariable));
+				nameNewSipmleVariable = _nameSimpleVariable + to_string(++_countSimpleVariable);
+				_pairs.push_back(Pair(nameNewSipmleVariable, i));
+				_namesColums.push_back(nameNewSipmleVariable);
 			}
 			else if(sing == ">=")
 			{
-				_namesColums.push_back(_nameSimpleVariable + to_string(++_countSimpleVariable));
-				_namesColums.push_back(_nameArtificialVariable + to_string(++_countArtificialVariable));
+				nameNewSipmleVariable = _nameSimpleVariable + to_string(++_countSimpleVariable);
+				nameNewArtificialVariable = _nameArtificialVariable + to_string(++_countArtificialVariable);
+				_pairs.push_back(Pair(nameNewSipmleVariable, i));
+				_pairs.push_back(Pair(nameNewArtificialVariable, i));
 			}
 			else if(sing == "=")
 			{
 				bool isNewVariable = true;
 				for(size_t k = 0; k < _countInitialVariable; k++)
 				{
-					cout << _matrix[i - 1][k] << endl;
 					if(_matrix[i - 1][k] == 1)
 					{
 						isNewVariable = false;
 						int countOne = 0;
 						for(size_t j = 0; j < _rows - 1; j++)
 						{
-							cout << _matrix[j][k] << endl;
 							if(_matrix[j][k] != 0)
 							{
 								++countOne;
@@ -739,7 +765,9 @@ class DoubleStep: Slitter, Shower
 				}
 				if(isNewVariable)
 				{
-					_namesColums.push_back(_nameArtificialVariable + to_string(++_countArtificialVariable));
+					nameNewArtificialVariable = _nameArtificialVariable + to_string(++_countArtificialVariable);
+					_pairs.push_back(Pair(nameNewSipmleVariable, i));
+					_namesColums.push_back(nameNewSipmleVariable);
 				}
 			}
 			else
