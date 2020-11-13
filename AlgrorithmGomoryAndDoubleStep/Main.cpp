@@ -6,10 +6,50 @@
 
 using namespace std;
 
+class Shower
+{
+	public:
+	template <typename T>
+	void Show(T& matr)
+	{
+		size_t size = matr.size();
+		for(size_t i = 0; i < size; i++)
+		{
+			cout << matr[i] << '\n';
+		}
+	}
+
+	template <typename T>
+	void Show(T& matr, size_t rows, size_t colums)
+	{
+		for(size_t i = 0; i < rows; i++)
+		{
+			for(size_t j = 0; j < colums; j++)
+			{
+				cout << matr[i][j] << '\t';
+			}
+			cout << '\n';
+		}
+	}
+
+	template <typename T>
+	void Show(T**& matr, size_t rows, size_t colums)
+	{
+		for(size_t i = 0; i < rows; i++)
+		{
+			for(size_t j = 0; j < colums; j++)
+			{
+				cout << matr[i][j] << '\t';
+			}
+			cout << '\n';
+		}
+	}
+};
+
 class Slitter
 {
 	protected:
-	void Split(vector<string>& strings, const string& line, char splitter = ' ')
+	void Split(vector<string>& strings, string& line, char splitter = ' ')
 	{
 		size_t size = line.size();
 		string temp = "";
@@ -229,74 +269,6 @@ class Fraction
 	}
 };
 
-class DoubleStep: Slitter
-{
-	private:
-	vector<vector<int>> _matrixOfRestriction;
-	vector<int> _targetFunction;
-	string _typeOfTask;
-	size_t _sizeRow;
-	size_t _sizeCol;
-
-	public:
-	DoubleStep(const string fileName)
-	{
-		ReadFromFile(fileName);
-	}
-
-	private:
-	void ReadFromFile(const string fileName)
-	{
-		ifstream in;
-		in.open(fileName);
-		if(in.is_open() == false)
-		{
-			cout << "Файл не найден.\n";
-		}
-
-		string line;
-		getline(in, line);
-		vector<string> splittedLine;
-
-		Split(splittedLine, line);
-		_typeOfTask = splittedLine.back();
-		_sizeCol = splittedLine.size();
-
-		for(size_t i = 0; i < _sizeCol - 1; i++)
-		{
-			_targetFunction.push_back(stoi(splittedLine[i]));
-		}
-		splittedLine.clear();
-		int size;
-		while(getline(in, line))
-		{
-			Split(splittedLine, line);
-			size = splittedLine.size();
-			_matrixOfRestriction.push_back(vector<int>(size));
-			for(size_t i = 0; i < splittedLine.size(); i++)
-			{
-				_matrixOfRestriction.back()[i] = stoi(splittedLine[i]);
-			}
-			splittedLine.clear();
-		}
-		_sizeRow = _matrixOfRestriction.size();
-		in.close();
-		ShowMatrix();
-	}
-
-	void ShowMatrix()
-	{
-		for(size_t i = 0; i < _sizeRow; i++)
-		{
-			for(size_t j = 0; j < _sizeCol; j++)
-			{
-				cout << _matrixOfRestriction[i][j] << '\t';
-			}
-			cout << '\n';
-		}
-	}
-};
-
 class Simplex:Slitter
 {
 	private:
@@ -306,12 +278,20 @@ class Simplex:Slitter
 	string _type;
 	vector<string> _namesColums;
 	vector<string> _namesRows;
-	public:
-	Simplex(string fileName/*, vector<string> namesCols, vector<string> namesRows*/)
-	{
-		/*_namesCols = namesCols;
-		_namesRows = namesRows;*/
 
+	public:
+	Simplex(Fraction**& matrix, size_t rows, size_t columns, string type, vector<string>& namesColums, vector<string>& namesRows)
+	{
+		_matrix = matrix;
+		_rows = rows;
+		_columns = columns;
+		_type = type;
+		_namesColums = namesColums;
+		_namesRows = _namesRows;
+	}
+
+	Simplex(string fileName)
+	{
 		ReadFromFile(fileName);
 	}
 
@@ -336,6 +316,11 @@ class Simplex:Slitter
 			ChangeMatrix(indexColumnNewBazis, indexRowMinValueInDeferens);
 		}
 		ShowTable();
+	}
+
+	Fraction**& GetMatrix()
+	{
+		return _matrix;
 	}
 
 	vector<string> GetNamesColmuns()
@@ -501,11 +486,6 @@ class Simplex:Slitter
 		}
 	}
 
-	bool IsBazis(int indexColumn)
-	{
-		return _matrix[_rows - 1][indexColumn] == 0;
-	}
-
 	void ReadFromFile(const string fileName)
 	{
 		ifstream in;
@@ -581,13 +561,131 @@ class Simplex:Slitter
 	}
 };
 
+class DoubleStep: Slitter, Shower
+{
+	private:
+	const string _nameVariable = "x";
+	Fraction** _matrixOfRestriction;
+	vector<string> _textFromFile;
+	vector<string> _namesColums;
+	vector<string> _namesRows;
+	vector<int> _targetFunction;
+	string _typeOfTask;
+	size_t _initialVariable;
+	size_t _simpleVariable;
+	size_t _artificialVariable;
+	size_t _rows;
+	size_t _colums;
+
+	public:
+	DoubleStep(const string fileName)
+	{
+		_textFromFile = ReadFromFile(fileName);
+		Show(_textFromFile);
+		SetTargetFunction();
+		CheckTypeOfTask();
+		_initialVariable = _targetFunction.size();
+		AddNewVariables();
+	}
+
+	private:
+
+
+
+	void AddNewVariables()
+	{
+		_simpleVariable = 0;
+		_artificialVariable = 0;
+		vector<string> splittedLine;
+		size_t size;
+		string sing;
+		for(size_t i = 1; i < _textFromFile.size(); i++)
+		{
+			Split(splittedLine, _textFromFile[i]);
+			size_t size = splittedLine.size();
+			sing = splittedLine[size - 2];
+			if(sing == "<=")
+			{
+				_simpleVariable++;
+			}
+			else if(sing == ">=")
+			{
+				_artificialVariable++;
+				_simpleVariable++;
+			}
+			else if(sing == "=")
+			{
+				_artificialVariable++;
+			}
+			else
+			{
+				cout << "Знак может быть только ( >=, <=, = ). Проверьте файл!\n";
+				exit(0);
+			}
+		}
+	}
+
+	void CheckTypeOfTask()
+	{
+		if(IsCorrectType() == false)
+		{
+			cout << "Тип задачи должне быть только min или max. Проверьте файл!\n";
+			exit(0);
+		}
+	}
+
+	bool IsCorrectType()
+	{
+		return _typeOfTask == "min" || _typeOfTask == "max";
+	}
+
+	void SetTypeOfTask(string type)
+	{
+		_typeOfTask = type;
+	}
+
+	void SetTargetFunction()
+	{
+		vector<string> splittedLine;
+		Split(splittedLine, _textFromFile[0]);
+		SetTypeOfTask(splittedLine.back());
+
+		size_t size = splittedLine.size() - 1;
+		_targetFunction = vector<int>(size);
+		for(size_t i = 0; i < size; i++)
+		{
+			_targetFunction[i] = stoi(splittedLine[i]);
+		}
+	}
+
+	vector<string> ReadFromFile(const string fileName)
+	{
+		ifstream in;
+		in.open(fileName);
+		if(in.is_open() == false)
+		{
+			cout << "Файл не найден.\n";
+			exit(0);
+		}
+
+		string line;
+		vector<string> text;
+		while(getline(in, line))
+		{
+			text.push_back(line);
+		}
+		in.close();
+		return text;
+	}
+};
+
 int main()
 {
 	setlocale(LC_ALL, "rus");
 
-	//DoubleStep task1("input.txt");
-	Simplex s("inputSimplex.txt");
-	s.Solve();
+	DoubleStep task1("input.txt");
+	//Simplex s("inputSimplex.txt");
+	//s.Solve();
 
 	/*Fraction a(3, 4);
 	Fraction b(2, 4);
