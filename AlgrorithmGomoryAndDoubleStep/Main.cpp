@@ -571,19 +571,20 @@ class Simplex:Slitter
 	}
 };
 
-class Pair
+class Cell
 {
 	private:
 	string _name;
 	size_t _indexName;
+	int _value;
 
 	public:
-	Pair(): _name(), _indexName() {};
-	Pair(string name, size_t value): _name(name), _indexName(value){}
+	Cell(): _name(), _indexName(), _value() {};
+	Cell(string name, size_t indexName, int value): _name(name), _indexName(indexName), _value(value) {}
 	
-	friend ostream& operator << (ostream& out, const Pair& p)
+	friend ostream& operator << (ostream& out, const Cell& p)
 	{
-		out << '(' << p._name << '-' << p._indexName << ')';
+		out << '(' << p._name << '-' << p._indexName << '=' << p._value <<  ')';
 		return out;
 	}
 
@@ -609,7 +610,7 @@ class DoubleStep: Slitter, Shower
 	vector<string> _namesColums;
 	vector<string> _namesRows;
 	vector<int> _targetFunction;
-	vector<Pair> _pairs;
+	vector<Cell> _pairs;
 	string _typeOfTask;
 	size_t _countInitialVariable;
 	size_t _countSimpleVariable;
@@ -663,7 +664,7 @@ class DoubleStep: Slitter, Shower
 			_matrix.push_back(vector<Fraction>(_countInitialVariable));
 		}
 
-		for(size_t i = 1; i < _textFromFile.size(); i++)
+		for(size_t i = 1; i < _rows; i++)
 		{
 			Split(splittedLine, _textFromFile[i]);
 
@@ -686,7 +687,8 @@ class DoubleStep: Slitter, Shower
 
 	void SetMatrix()
 	{
-		/*_colums = _countInitialVariable + _countSimpleVariable + _countArtificialVariable;
+		_matrix.clear();
+		_colums = _countInitialVariable + _countSimpleVariable + _countArtificialVariable;
 		vector<string> splittedLine;
 		size_t size;
 		for(size_t i = 0; i < _rows; i++)
@@ -694,18 +696,20 @@ class DoubleStep: Slitter, Shower
 			_matrix.push_back(vector<Fraction>(_colums));
 		}
 
-		for(size_t i = 1; i < _textFromFile.size(); i++)
+		for(size_t i = 1; i < _rows; i++)
 		{
 			Split(splittedLine, _textFromFile[i]);
 
 			size_t size = splittedLine.size();
-			for(size_t j = 0; j < size - 2; j++)
+			_matrix[i - 1][0] = stoi(splittedLine[size - 1]);
+			for(size_t j = 1; j < size - 2; j++)
 			{
 				_matrix[i - 1][j] = stoi(splittedLine[j]);
 			}
-			_matrix[i - 1][size - 2] = stoi(splittedLine[size - 1]);
 			splittedLine.clear();
-		}*/
+		}
+		Show(_matrix, _matrix.size(), _matrix[0].size());
+		int a = 0;
 	}
 
 	void AddNamesToColumnsAndCountNewVariables()
@@ -726,15 +730,15 @@ class DoubleStep: Slitter, Shower
 			if(sing == "<=")
 			{
 				nameNewSipmleVariable = _nameSimpleVariable + to_string(++_countSimpleVariable);
-				_pairs.push_back(Pair(nameNewSipmleVariable, i));
+				_pairs.push_back(Cell(nameNewSipmleVariable, i, 1));
 				_namesColums.push_back(nameNewSipmleVariable);
 			}
 			else if(sing == ">=")
 			{
 				nameNewSipmleVariable = _nameSimpleVariable + to_string(++_countSimpleVariable);
 				nameNewArtificialVariable = _nameArtificialVariable + to_string(++_countArtificialVariable);
-				_pairs.push_back(Pair(nameNewSipmleVariable, i));
-				_pairs.push_back(Pair(nameNewArtificialVariable, i));
+				_pairs.push_back(Cell(nameNewSipmleVariable, i, -1));
+				_pairs.push_back(Cell(nameNewArtificialVariable, i, 1));
 				_namesColums.push_back(nameNewSipmleVariable);
 				_namesColums.push_back(nameNewArtificialVariable);
 
@@ -776,7 +780,7 @@ class DoubleStep: Slitter, Shower
 				if(isNewVariable)
 				{
 					nameNewArtificialVariable = _nameArtificialVariable + to_string(++_countArtificialVariable);
-					_pairs.push_back(Pair(nameNewArtificialVariable, i));
+					_pairs.push_back(Cell(nameNewArtificialVariable, i, 1));
 					_namesColums.push_back(nameNewArtificialVariable);
 				}
 			}
