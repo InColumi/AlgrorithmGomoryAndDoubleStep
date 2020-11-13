@@ -333,7 +333,7 @@ class Simplex:Slitter
 
 	void ShowTable()
 	{
-		cout << "Базис\t" << "Решение\t";
+		cout << "Базис\t";
 		for(size_t i = 0; i < _namesColums.size(); i++)
 		{
 			cout << _namesColums[i] << '\t';
@@ -584,7 +584,7 @@ class DoubleStep: Slitter, Shower
 
 	void Solve()
 	{
-		Simplex simplex(_matrix, _rows, _colums, _typeOfTask, _namesColums, _namesRows);
+		Simplex simplex(_matrix, _rows, _colums, "min", _namesColums, _namesRows);
 		simplex.ShowTable();
 		simplex.Solve();
 		simplex.ShowTable();
@@ -693,12 +693,12 @@ class DoubleStep: Slitter, Shower
 				_namesRows.push_back(_namesColums[i]);
 			}
 		}
+		_namesRows.push_back(_nameLastRow);
 		if(_namesRows.size() != _rows)
 		{
 			cout << "Кол-во базисных векторов не равно кол-ву ограничений!\n";
 			exit(0);
 		}
-		_namesRows.push_back(_nameLastRow);
 	}
 
 	bool IsBazis(size_t indexCol)
