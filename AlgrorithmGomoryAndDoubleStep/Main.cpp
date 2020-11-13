@@ -17,6 +17,7 @@ class Shower
 		{
 			cout << matr[i] << '\n';
 		}
+		cout << '\n';
 	}
 
 	template <typename T>
@@ -30,6 +31,7 @@ class Shower
 			}
 			cout << '\n';
 		}
+		cout << '\n';
 	}
 
 	template <typename T>
@@ -43,6 +45,7 @@ class Shower
 			}
 			cout << '\n';
 		}
+		cout << '\n';
 	}
 };
 
@@ -282,7 +285,7 @@ class Fraction
 class Simplex:Slitter
 {
 	private:
-	Fraction** _matrix;
+	vector<vector<Fraction>> _matrix;
 	size_t _rows;
 	size_t _columns;
 	string _type;
@@ -290,28 +293,14 @@ class Simplex:Slitter
 	vector<string> _namesRows;
 
 	public:
-	Simplex(Fraction**& matrix, size_t rows, size_t columns, string type, vector<string>& namesColums, vector<string>& namesRows)
+	Simplex(vector<vector<Fraction>> matrix, size_t rows, size_t columns, string type, vector<string> namesColums, vector<string>& namesRows)
 	{
 		_matrix = matrix;
 		_rows = rows;
 		_columns = columns;
 		_type = type;
 		_namesColums = namesColums;
-		_namesRows = _namesRows;
-	}
-
-	Simplex(string fileName)
-	{
-		ReadFromFile(fileName);
-	}
-
-	~Simplex()
-	{
-		for(size_t i = 0; i < _rows; i++)
-		{
-			delete[] _matrix[i];
-		}
-		delete[] _matrix;
+		_namesRows = namesRows;
 	}
 
 	void Solve()
@@ -325,10 +314,9 @@ class Simplex:Slitter
 			DivRowOn(indexRowMinValueInDeferens, _matrix[indexRowMinValueInDeferens][indexColumnNewBazis]);
 			ChangeMatrix(indexColumnNewBazis, indexRowMinValueInDeferens);
 		}
-		ShowTable();
 	}
 
-	Fraction**& GetMatrix()
+	vector<vector<Fraction>> GetMatrix()
 	{
 		return _matrix;
 	}
@@ -343,6 +331,25 @@ class Simplex:Slitter
 		return _namesRows;
 	}
 
+	void ShowTable()
+	{
+		cout << "Базис\t" << "Решение\t";
+		for(size_t i = 0; i < _namesColums.size(); i++)
+		{
+			cout << _namesColums[i] << '\t';
+		}
+		cout << '\n';
+		for(size_t i = 0; i < _rows; i++)
+		{
+			cout << _namesRows[i] << '\t';
+			for(size_t j = 0; j < _columns; j++)
+			{
+				cout << _matrix[i][j] << '\t';
+			}
+			cout << '\n';
+		}
+		cout << '\n';
+	}
 	private:
 
 	bool IsOptimalPlan()
@@ -496,79 +503,6 @@ class Simplex:Slitter
 		}
 	}
 
-	void ReadFromFile(const string fileName)
-	{
-		ifstream in;
-		in.open(fileName);
-		if(in.is_open() == false)
-		{
-			cout << "Файл не найден.\n";
-			exit(0);
-		}
-
-		string line;
-		getline(in, line);
-		vector<string> splittedLine;
-
-		Split(splittedLine, line);
-		_rows = stoi(splittedLine[0]);
-		_columns = stoi(splittedLine[1]);
-		_type = splittedLine[2];
-		MemoryAllocation(_matrix, _rows, _columns);
-		_namesRows = vector<string>(_rows);
-
-		getline(in, line);
-		Split(_namesColums, line);
-
-		splittedLine.clear();
-		int size;
-		int row = 0;
-		int col = 0;
-		while(getline(in, line))
-		{
-			Split(splittedLine, line);
-			size = splittedLine.size();
-			_namesRows[row] = splittedLine[0];
-			for(size_t i = 1; i < _columns + 1; i++)
-			{
-				_matrix[row][col++] = Fraction(stoi(splittedLine[i]));
-			}
-			splittedLine.clear();
-			row++;
-			col = 0;
-		}
-		in.close();
-
-		ShowTable();
-	}
-
-	void MemoryAllocation(Fraction**& matr, size_t sizeRow, size_t cols)
-	{
-		matr = new Fraction * [sizeRow];
-		for(size_t i = 0; i < sizeRow; i++)
-		{
-			matr[i] = new Fraction[cols];
-		}
-	}
-
-	void ShowTable()
-	{
-		for(size_t i = 0; i < _namesColums.size(); i++)
-		{
-			cout << _namesColums[i] << '\t';
-		}
-		cout << '\n';
-		for(size_t i = 0; i < _rows; i++)
-		{
-			cout << _namesRows[i] << '\t';
-			for(size_t j = 0; j < _columns; j++)
-			{
-				cout << _matrix[i][j] << '\t';
-			}
-			cout << '\n';
-		}
-		cout << '\n';
-	}
 };
 
 class Cell
@@ -643,7 +577,21 @@ class DoubleStep: Slitter, Shower
 		//Show(_namesColums);
 		Show(_matrix, _rows, _colums);
 		SetNamesRows();
-		CreteNewZ();
+		SetNewZ();
+		Show(_matrix, _rows, _colums);
+
+	}
+
+	void Solve()
+	{
+		Simplex simplex(_matrix, _rows, _colums, _typeOfTask, _namesColums, _namesRows);
+		simplex.ShowTable();
+		simplex.Solve();
+		simplex.ShowTable();
+
+		_namesColums = simplex.GetNamesColmuns();
+		_namesRows = simplex.GetNamesRows();
+		_matrix = simplex.GetMatrix();
 	}
 
 	private:
@@ -662,7 +610,7 @@ class DoubleStep: Slitter, Shower
 		return z;
 	}
 
-	void CreteNewZ()
+	void SetNewZ()
 	{
 		vector<Fraction> z = GetFirstZ();
 		for(size_t i = 0; i < _cells.size(); i++)
@@ -675,7 +623,11 @@ class DoubleStep: Slitter, Shower
 				}
 			}
 		}
-		Show(z);
+
+		for(size_t i = 0; i < _colums; i++)
+		{
+			_matrix[_rows - 1][i] = z[i];
+		}
 	}
 
 	void SumRows(vector<Fraction>& row1, vector<Fraction> row2)
@@ -695,6 +647,7 @@ class DoubleStep: Slitter, Shower
 
 	void SetNamesColums()
 	{
+		_namesColums.push_back("Решение");
 		for(size_t i = 1; i <= _countInitialVariable; i++)
 		{
 			_namesColums.push_back(_nameInitialVariable + to_string(i));
@@ -740,6 +693,11 @@ class DoubleStep: Slitter, Shower
 				_namesRows.push_back(_namesColums[i]);
 			}
 		}
+		if(_namesRows.size() != _rows)
+		{
+			cout << "Кол-во базисных векторов не равно кол-ву ограничений!\n";
+			exit(0);
+		}
 		_namesRows.push_back(_nameLastRow);
 	}
 
@@ -770,7 +728,7 @@ class DoubleStep: Slitter, Shower
 	void SetMatrix()
 	{
 		_matrix.clear();
-		_colums = _countInitialVariable + _countSimpleVariable + _countArtificialVariable;
+		_colums = _countInitialVariable + _countSimpleVariable + _countArtificialVariable + 1;
 		vector<string> splittedLine;
 		size_t size;
 		for(size_t i = 0; i < _rows; i++)
@@ -792,14 +750,14 @@ class DoubleStep: Slitter, Shower
 		}
 
 		int index;
-		for(size_t i = _countInitialVariable; i < _colums; i++)
+		for(size_t i = _countInitialVariable + 1; i < _colums; i++)
 		{
-			index = _cells[i - _countInitialVariable].GetIndex();
+			index = _cells[i - _countInitialVariable - 1].GetIndex();
 			for(size_t j = 0; j < _cells.size(); j++)
 			{
 				if(index == j)
 				{
-					_matrix[index][i] = _cells[i - _countInitialVariable].GetValue();
+					_matrix[index][i] = _cells[i - _countInitialVariable - 1].GetValue();
 					break;
 				}
 			}
@@ -947,7 +905,8 @@ int main()
 {
 	setlocale(LC_ALL, "rus");
 
-	DoubleStep task1("input.txt");
+	DoubleStep doubleStep("input.txt");
+	doubleStep.Solve();
 	//Simplex s("inputSimplex.txt");
 	//s.Solve();
 
