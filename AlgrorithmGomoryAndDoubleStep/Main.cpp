@@ -92,6 +92,11 @@ class Fraction
 		return result;
 	}
 
+	Fraction operator - ()
+	{
+		return Fraction(_numerator * (-1), _denominator);
+	}
+
 	Fraction operator * (const Fraction& f1)
 	{
 		Fraction result(_numerator * f1._numerator, _denominator * f1._denominator);
@@ -116,12 +121,24 @@ class Fraction
 
 	bool operator > (const Fraction& f1)
 	{
-		return _numerator > f1._numerator && _denominator <= f1._denominator;
+		if(_denominator == f1._denominator)
+		{
+			return _numerator > f1._numerator;
+		}
+		else if(_numerator == f1._numerator)
+		{
+			return _denominator < f1._denominator;
+		}
+		else
+		{
+			int lcm = GetLCM(_denominator, f1._denominator);
+			return _numerator * lcm / _denominator > f1._numerator * lcm / f1._denominator;
+		}
 	}
 
 	bool operator < (const Fraction& f1)
 	{
-		return _numerator < f1._numerator && _denominator >= f1._denominator;
+		return (*this > f1) == false;
 	}
 
 	bool operator == (const Fraction& f1)
@@ -179,6 +196,17 @@ class Fraction
 			f._numerator *= -1;
 			f._denominator *= -1;
 		}
+	}
+
+	/// <summary>
+	/// Наименьшее общее кратное
+	/// </summary>
+	/// <param name="a"></param>
+	/// <param name="b"></param>
+	/// <returns></returns>
+	int GetLCM(int a, int b)
+	{
+		return abs(a * b) / GetGСD(b, a);
 	}
 
 	int GetGСD(int a, int b)
@@ -273,8 +301,8 @@ class Simplex:Slitter
 {
 	private:
 	Fraction** _matrix;
-	size_t _sizeRow;
-	size_t _sizeCol;
+	size_t _rows;
+	size_t _columns;
 	string _type;
 	vector<string> _namesCols;
 	vector<string> _namesRows;
@@ -289,7 +317,7 @@ class Simplex:Slitter
 
 	~Simplex()
 	{
-		for(size_t i = 0; i < _sizeRow; i++)
+		for(size_t i = 0; i < _rows; i++)
 		{
 			delete[] _matrix[i];
 		}
@@ -298,22 +326,101 @@ class Simplex:Slitter
 
 	void Solve()
 	{
-		int indexColumnNewBazis = GetIndexMaxValueInZ();
-		int indexRowMinValueInDeferens = GetIndexMinDeferensInRow(indexColumnNewBazis);
+		while(IsOptimalPlan() == false)
+		{
+			int indexColumnNewBazis = GetIndexMaxCellInZ();
+			int indexRowMinValueInDeferens = GetIndexMinDeferensInRow(indexColumnNewBazis);
 
-		_namesRows[indexRowMinValueInDeferens] = _namesCols[indexColumnNewBazis + 2];
-		ShowMatrix();
-		CreateNewRow(indexRowMinValueInDeferens, _matrix[indexRowMinValueInDeferens][indexColumnNewBazis]);
-		ShowMatrix();
+			_namesRows[indexRowMinValueInDeferens] = _namesCols[indexColumnNewBazis + 2];
+			DivRowOn(indexRowMinValueInDeferens, _matrix[indexRowMinValueInDeferens][indexColumnNewBazis]);
+			ChangeMatrix(indexColumnNewBazis, indexRowMinValueInDeferens);
+		}
+		ShowTable();
 	}
 
 	private:
 
-	void CreateNewRow(int indexNewRow, Fraction currentValue)
+	bool IsOptimalPlan()
 	{
-		for(size_t i = 0; i < _sizeCol; i++)
+		int countInColum = 0;
+		if(_type == "min")
 		{
-			_matrix[indexNewRow][i] = _matrix[indexNewRow][i] / currentValue;
+			for(size_t i = 1; i < _columns; i++)
+			{
+				if(_matrix[_rows - 1][i] > 0)
+				{
+					for(size_t j = 0; j < _rows - 1; j++)
+					{
+						if(_matrix[j][i] > 0)
+						{
+							return false;
+						}
+						countInColum++;
+					}
+					if(countInColum == _rows - 1)
+					{
+						ShowInfoNotOptimalPlan("снизу");
+					}
+				}
+			}
+		}
+		else if(_type == "max")
+		{
+			for(size_t i = 1; i < _columns; i++)
+			{
+				if(_matrix[_rows - 1][i] < 0)
+				{
+					for(size_t j = 0; j < _rows - 1; j++)
+					{
+						if(_matrix[j][i] < 0)
+						{
+							return false;
+						}
+						countInColum++;
+					}
+				}
+				if(countInColum == _rows - 1)
+				{
+					ShowInfoNotOptimalPlan("снизу");
+				}
+			}
+		}
+		else
+		{
+			cout << "Тип задачи должне быть только min или max. Проверьте файл!\n";
+			exit(0);
+		}
+		return true;
+	}
+
+	void ShowInfoNotOptimalPlan(string text)
+	{
+		cout << "Оптимального решение не существует, т. к. функция f не ограничена " << text << "!\n";
+		exit(0);
+	}
+
+	void ChangeMatrix(int indexNewCol, int indexRow)
+	{
+		Fraction newValue;
+		Fraction oldValue;
+		for(size_t i = 0; i < _rows; i++)
+		{
+			if(i < indexRow || i > indexRow)
+			{
+				oldValue = _matrix[i][indexNewCol];
+				for(size_t j = 0; j < _columns; j++)
+				{
+					_matrix[i][j] = -_matrix[indexRow][j] * oldValue + _matrix[i][j];
+				}
+			}
+		}
+	}
+
+	void DivRowOn(int indexRow, Fraction currentCell)
+	{
+		for(size_t i = 0; i < _columns; i++)
+		{
+			_matrix[indexRow][i] = _matrix[indexRow][i] / currentCell;
 		}
 	}
 
@@ -322,9 +429,9 @@ class Simplex:Slitter
 		Fraction min = _matrix[0][0] / _matrix[0][indexCol];
 		int index = 0;
 		Fraction value;
-		for(size_t i = 1; i < _sizeRow - 1; i++)
+		for(size_t i = 1; i < _rows - 1; i++)
 		{
-			if(_matrix[i][indexCol].GetNumerator() > 0 )
+			if(_matrix[i][indexCol].GetNumerator() > 0)
 			{
 				value = _matrix[i][0] / _matrix[i][indexCol];
 				if(value < min)
@@ -337,14 +444,14 @@ class Simplex:Slitter
 		return index;
 	}
 
-	int GetIndexMaxValueInZ()
+	int GetIndexMaxCellInZ()
 	{
-		int lastRow = _sizeRow - 1;
-		Fraction minMax = _matrix[lastRow][1];
-		int index = 1;
+		int lastRow = _rows - 1;
+		int index = GetIndexNotZeroInZ();
+		Fraction minMax = _matrix[lastRow][index];
 		if(_type == "min")
 		{
-			for(size_t i = 2; i < _sizeCol; i++)
+			for(size_t i = 2; i < _columns; i++)
 			{
 				if(_matrix[lastRow][i] > minMax)
 				{
@@ -355,7 +462,7 @@ class Simplex:Slitter
 		}
 		else if(_type == "max")
 		{
-			for(size_t i = 2; i < _sizeCol; i++)
+			for(size_t i = 2; i < _columns; i++)
 			{
 				if(_matrix[lastRow][i] < minMax)
 				{
@@ -369,13 +476,24 @@ class Simplex:Slitter
 			cout << "Type must be min or max. Check file!\n";
 			exit(0);
 		}
-		
+
 		return index;
+	}
+
+	int GetIndexNotZeroInZ()
+	{
+		for(size_t i = 1; i < _columns; i++)
+		{
+			if(_matrix[_rows - 1][i] != 0)
+			{
+				return i;
+			}
+		}
 	}
 
 	bool IsBazis(int indexColumn)
 	{
-		return _matrix[_sizeRow - 1][indexColumn] == 0;
+		return _matrix[_rows - 1][indexColumn] == 0;
 	}
 
 	void ReadFromFile(const string fileName)
@@ -393,11 +511,11 @@ class Simplex:Slitter
 		vector<string> splittedLine;
 
 		Split(splittedLine, line);
-		_sizeRow = stoi(splittedLine[0]);
-		_sizeCol = stoi(splittedLine[1]);
+		_rows = stoi(splittedLine[0]);
+		_columns = stoi(splittedLine[1]);
 		_type = splittedLine[2];
-		MemoryAllocation(_matrix, _sizeRow, _sizeCol);
-		_namesRows = vector<string>(_sizeRow);
+		MemoryAllocation(_matrix, _rows, _columns);
+		_namesRows = vector<string>(_rows);
 
 		getline(in, line);
 		Split(_namesCols, line);
@@ -411,7 +529,7 @@ class Simplex:Slitter
 			Split(splittedLine, line);
 			size = splittedLine.size();
 			_namesRows[row] = splittedLine[0];
-			for(size_t i = 1; i < _sizeCol + 1; i++)
+			for(size_t i = 1; i < _columns + 1; i++)
 			{
 				_matrix[row][col++] = Fraction(stoi(splittedLine[i]));
 			}
@@ -421,7 +539,7 @@ class Simplex:Slitter
 		}
 		in.close();
 
-		ShowMatrix();
+		ShowTable();
 	}
 
 	void MemoryAllocation(Fraction**& matr, size_t sizeRow, size_t cols)
@@ -433,17 +551,17 @@ class Simplex:Slitter
 		}
 	}
 
-	void ShowMatrix()
+	void ShowTable()
 	{
 		for(size_t i = 0; i < _namesCols.size(); i++)
 		{
 			cout << _namesCols[i] << '\t';
 		}
 		cout << '\n';
-		for(size_t i = 0; i < _sizeRow; i++)
+		for(size_t i = 0; i < _rows; i++)
 		{
 			cout << _namesRows[i] << '\t';
-			for(size_t j = 0; j < _sizeCol; j++)
+			for(size_t j = 0; j < _columns; j++)
 			{
 				cout << _matrix[i][j] << '\t';
 			}
@@ -461,8 +579,21 @@ int main()
 	Simplex s("inputSimplex.txt");
 	s.Solve();
 
-	/*Fraction a(1, 2);
-	cout << a / 2 << endl;*/
+	/*Fraction a(3, 4);
+	Fraction b(2, 4);
+	cout << (a < b) << endl;*/
 
 	return 0;
 }
+
+//9 15 min
+//Базис Решение x1 x2 x3 y1 y2 y3 y4 y5 y6 r1 r2 r3 r4 r5
+//y1 4000 2 3 5 1 0 0 0 0 0 0 0 0 0 0
+//y2 6000 4 2 7 0 1 0 0 0 0 0 0 0 0 0
+//y3 9000 6 3 2 0 0 1 0 0 0 0 0 0 0 0
+//r1 200 1 0 0 0 0 0 - 1 0 0 1 0 0 0 0
+//r2 200 0 1 0 0 0 0 0 - 1 0 0 1 0 0 0
+//r3 150 0 0 1 0 0 0 0 0 - 1 0 0 1 0 0
+//r4 0 2 - 3 0 0 0 0 0 0 0 0 0 0 1 0
+//r5 0 0 5 - 2 0 0 0 0 0 0 0 0 0 0 1
+//Z 550 3 3 - 1 0 0 0 - 1 - 1 - 1 0 0 0 0 0
