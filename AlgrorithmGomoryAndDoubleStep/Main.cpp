@@ -581,6 +581,12 @@ class Pair
 	Pair(): _name(), _indexName() {};
 	Pair(string name, size_t value): _name(name), _indexName(value){}
 	
+	friend ostream& operator << (ostream& out, const Pair& p)
+	{
+		out << '(' << p._name << '-' << p._indexName << ')';
+		return out;
+	}
+
 	string GetName()
 	{
 		return _name;
@@ -627,6 +633,7 @@ class DoubleStep: Slitter, Shower
 		SetInitialMatrix();
 		AddNamesToColumnsAndCountNewVariables();
 		Show(_namesColums);
+		Show(_pairs);
 		SetMatrix();
 	}
 
@@ -728,6 +735,9 @@ class DoubleStep: Slitter, Shower
 				nameNewArtificialVariable = _nameArtificialVariable + to_string(++_countArtificialVariable);
 				_pairs.push_back(Pair(nameNewSipmleVariable, i));
 				_pairs.push_back(Pair(nameNewArtificialVariable, i));
+				_namesColums.push_back(nameNewSipmleVariable);
+				_namesColums.push_back(nameNewArtificialVariable);
+
 			}
 			else if(sing == "=")
 			{
@@ -766,8 +776,8 @@ class DoubleStep: Slitter, Shower
 				if(isNewVariable)
 				{
 					nameNewArtificialVariable = _nameArtificialVariable + to_string(++_countArtificialVariable);
-					_pairs.push_back(Pair(nameNewSipmleVariable, i));
-					_namesColums.push_back(nameNewSipmleVariable);
+					_pairs.push_back(Pair(nameNewArtificialVariable, i));
+					_namesColums.push_back(nameNewArtificialVariable);
 				}
 			}
 			else
