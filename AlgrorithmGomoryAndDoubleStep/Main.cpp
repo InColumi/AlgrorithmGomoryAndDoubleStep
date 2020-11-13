@@ -175,7 +175,7 @@ class Fraction
 			return _numerator * lcm / _denominator > f._numerator * lcm / f._denominator;
 		}
 	}
-	
+
 	bool operator >= (const Fraction& f)
 	{
 		return *this > f || *this == f;
@@ -641,7 +641,15 @@ class DoubleStep: Slitter, Shower
 			size_t size = splittedLine.size();
 			for(size_t j = 0; j < size - 2; j++)
 			{
-				_matrix[i - 1][j] = stoi(splittedLine[j]);
+				try
+				{
+					_matrix[i - 1][j] = stoi(splittedLine[j]);
+				}
+				catch(const std::exception&)
+				{
+					cout << "Проверьте данные в файле!\n";
+					exit(0);
+				}
 			}
 			splittedLine.clear();
 		}
@@ -649,7 +657,7 @@ class DoubleStep: Slitter, Shower
 
 	void SetMatrix()
 	{
-		_colums = _countInitialVariable + _countSimpleVariable + _countArtificialVariable;
+		/*_colums = _countInitialVariable + _countSimpleVariable + _countArtificialVariable;
 		vector<string> splittedLine;
 		size_t size;
 		for(size_t i = 0; i < _rows; i++)
@@ -668,7 +676,7 @@ class DoubleStep: Slitter, Shower
 			}
 			_matrix[i - 1][size - 2] = stoi(splittedLine[size - 1]);
 			splittedLine.clear();
-		}
+		}*/
 	}
 
 	void AddNamesToColumnsAndCountNewVariables()
@@ -695,39 +703,51 @@ class DoubleStep: Slitter, Shower
 			}
 			else if(sing == "=")
 			{
+				bool isNewVariable = true;
 				for(size_t k = 0; k < _countInitialVariable; k++)
 				{
-					int countVariable = 0;
-					int indexRow;
-					for(size_t j = 0; j < _rows; j++)
+					cout << _matrix[i - 1][k] << endl;
+					if(_matrix[i - 1][k] == 1)
 					{
-						if(_matrix[j][k] != 0)
+						isNewVariable = false;
+						int countOne = 0;
+						for(size_t j = 0; j < _rows - 1; j++)
 						{
-							++countVariable;
-							indexRow = j;
+							cout << _matrix[j][k] << endl;
+							if(_matrix[j][k] != 0)
+							{
+								++countOne;
+							}
+							if(countOne > 1)
+							{
+								countOne = 0;
+								break;
+							}
 						}
-						if(countVariable > 1)
+
+						if(countOne == 0)
 						{
-							countVariable = 0;
+							isNewVariable = true;
+							continue;
+						}
+
+						if(countOne == 1)
+						{
 							break;
 						}
 					}
-					if(countVariable >= 1 && _matrix[indexRow][i] <= 0)
-					{
-						_namesColums.push_back(_nameArtificialVariable + to_string(++_countArtificialVariable));
-					}
-					else if(countVariable >= 1 && _matrix[indexRow][i] <= 0)
-					{
-
-					}
 				}
-
+				if(isNewVariable)
+				{
+					_namesColums.push_back(_nameArtificialVariable + to_string(++_countArtificialVariable));
+				}
 			}
 			else
 			{
 				cout << "Знак может быть только ( >=, <=, = ). Проверьте файл!\n";
 				exit(0);
 			}
+			splittedLine.clear();
 		}
 	}
 
