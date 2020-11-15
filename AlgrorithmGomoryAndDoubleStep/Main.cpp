@@ -201,7 +201,7 @@ class Fraction
 		else
 		{
 			int lcm = GetLCM(_denominator, f._denominator);
-			return _numerator * lcm / _denominator < f._numerator * lcm / f._denominator;
+			return _numerator * lcm / _denominator < f._numerator* lcm / f._denominator;
 		}
 	}
 
@@ -324,7 +324,6 @@ class Simplex:Slitter
 			_namesRows[indexRowMinValueInDeferens] = _namesColums[indexColumnNewBazis];
 			DivRowOn(indexRowMinValueInDeferens, _matrix[indexRowMinValueInDeferens][indexColumnNewBazis]);
 			ChangeMatrix(indexColumnNewBazis, indexRowMinValueInDeferens);
-			ShowTable();
 		}
 	}
 
@@ -558,7 +557,7 @@ class DoubleStep: Slitter, Shower
 	const string _nameArtificialVariable = "r";
 	const string _nameLastRow = "Z";
 	vector<vector<Fraction>> _matrix;
-	vector<Fraction> _ansewer;
+	vector<Fraction> _answer;
 	vector<string> _textFromFile;
 	vector<string> _namesColums;
 	vector<string> _namesRows;
@@ -593,37 +592,58 @@ class DoubleStep: Slitter, Shower
 
 	void Solve()
 	{
-		Simplex simplex(_matrix, _rows, _colums, "min", _namesColums, _namesRows);
+		SolveSimplex("min");
+
+		MakeLastMatrix();
+		CreateLastRowForSecondStep();
+
+		SolveSimplex(_typeOfTask);
+
+		SetAnswer();
+		ShowVerification();
+	}
+
+	private:
+
+	void ShowVerification()
+	{
+		Fraction answer;
+		cout << _nameLastRow << " (" << _nameInitialVariable << ") = ";
+		for(size_t i = 0; i < _countInitialVariable - 1; i++)
+		{
+			cout << _answer[i] << '*' << _targetFunction[i] << '+';
+			answer = answer + _answer[i] * _targetFunction[i];
+		}
+		cout << _answer[_countInitialVariable - 1] << '*' << _targetFunction[_countInitialVariable - 1];
+		answer = answer + _answer[_countInitialVariable - 1] * _targetFunction[_countInitialVariable - 1];
+		cout << ((answer == _matrix[_rows - 1][0]) ? " == " : " != ") << _matrix[_rows - 1][0] << endl;
+	}
+
+	void SolveSimplex(string typeOfTask)
+	{
+		Simplex simplex(_matrix, _rows, _colums, typeOfTask, _namesColums, _namesRows);
 		simplex.ShowTable();
 		simplex.Solve();
 
 		_namesColums = simplex.GetNamesColmuns();
 		_namesRows = simplex.GetNamesRows();
 		_matrix = simplex.GetMatrix();
-
-		MakeLastMatrix();
-		CreateLastRowForSecondStep();
-
-		simplex = Simplex(_matrix, _rows, _colums, _typeOfTask, _namesColums, _namesRows);
-		simplex.Solve();
 		simplex.ShowTable();
-		Verification();
 	}
 
-	private:
-
-	void Verification()
+	void SetAnswer()
 	{
-		Show(_targetFunction);
 		vector<string> namesInitialVariable = GetNamesInitialVariable();
 
-		while(_targetFunction.empty() == false)
+		while(namesInitialVariable.empty() == false)
 		{
 			for(size_t i = 0; i < _namesRows.size(); i++)
 			{
-				if(namesInitialVariable.back() ==_namesRows[i])
+				if(namesInitialVariable.back() == _namesRows[i])
 				{
-					_ansewer.push_back(_matrix[i][0]);
+					_answer.push_back(_matrix[i][0]);
+					namesInitialVariable.pop_back();
+					break;
 				}
 			}
 		}
@@ -632,9 +652,10 @@ class DoubleStep: Slitter, Shower
 	vector<string> GetNamesInitialVariable()
 	{
 		vector<string> namesInitialVariable;
-		for(size_t i = 0; i < _targetFunction.size(); i++)
+
+		for(size_t i = 0; i < _countInitialVariable; i++)
 		{
-			namesInitialVariable.push_back(_namesColums[i + 1]);
+			namesInitialVariable.push_back(_namesColums[_countInitialVariable - i]);
 		}
 		return namesInitialVariable;
 	}
@@ -648,7 +669,13 @@ class DoubleStep: Slitter, Shower
 		size_t indexRow = 0;
 
 		vector<string> namesInitialVariable = GetNamesInitialVariable();
-
+		string temp;
+		for(size_t i = 0; i < _countInitialVariable / 2; i++)
+		{
+			temp = namesInitialVariable[_countInitialVariable - i - 1];
+			namesInitialVariable[_countInitialVariable - i - 1] = namesInitialVariable[i];
+			namesInitialVariable[i] = temp;
+		}
 		size_t indexColums = 0;
 		size_t oldColums = 0;
 		vector<Fraction> tempTargetFunction = _targetFunction;
@@ -662,7 +689,7 @@ class DoubleStep: Slitter, Shower
 					{
 						_matrix[_rows - 1][j] = _matrix[i][j] * tempTargetFunction.back() + _matrix[_rows - 1][j];
 					}
-					
+
 					tempTargetFunction.pop_back();
 					namesInitialVariable.pop_back();
 					break;
