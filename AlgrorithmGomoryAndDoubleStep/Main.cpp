@@ -2,7 +2,6 @@
 #include <string>
 #include <fstream>
 #include <vector>
-#include <time.h>
 
 using namespace std;
 
@@ -325,6 +324,7 @@ class Simplex:Slitter
 			_namesRows[indexRowMinValueInDeferens] = _namesColums[indexColumnNewBazis];
 			DivRowOn(indexRowMinValueInDeferens, _matrix[indexRowMinValueInDeferens][indexColumnNewBazis]);
 			ChangeMatrix(indexColumnNewBazis, indexRowMinValueInDeferens);
+			ShowTable();
 		}
 	}
 
@@ -558,6 +558,7 @@ class DoubleStep: Slitter, Shower
 	const string _nameArtificialVariable = "r";
 	const string _nameLastRow = "Z";
 	vector<vector<Fraction>> _matrix;
+	vector<Fraction> _ansewer;
 	vector<string> _textFromFile;
 	vector<string> _namesColums;
 	vector<string> _namesRows;
@@ -606,10 +607,37 @@ class DoubleStep: Slitter, Shower
 		simplex = Simplex(_matrix, _rows, _colums, _typeOfTask, _namesColums, _namesRows);
 		simplex.Solve();
 		simplex.ShowTable();
+		Verification();
 	}
 
-
 	private:
+
+	void Verification()
+	{
+		Show(_targetFunction);
+		vector<string> namesInitialVariable = GetNamesInitialVariable();
+
+		while(_targetFunction.empty() == false)
+		{
+			for(size_t i = 0; i < _namesRows.size(); i++)
+			{
+				if(namesInitialVariable.back() ==_namesRows[i])
+				{
+					_ansewer.push_back(_matrix[i][0]);
+				}
+			}
+		}
+	}
+
+	vector<string> GetNamesInitialVariable()
+	{
+		vector<string> namesInitialVariable;
+		for(size_t i = 0; i < _targetFunction.size(); i++)
+		{
+			namesInitialVariable.push_back(_namesColums[i + 1]);
+		}
+		return namesInitialVariable;
+	}
 
 	void CreateLastRowForSecondStep()
 	{
@@ -619,28 +647,24 @@ class DoubleStep: Slitter, Shower
 		}
 		size_t indexRow = 0;
 
-		vector<string> namesTargetFunction;
-		for(size_t i = 0; i < _targetFunction.size(); i++)
-		{
-			namesTargetFunction.push_back(_namesColums[i + 1]);
-		}
+		vector<string> namesInitialVariable = GetNamesInitialVariable();
 
 		size_t indexColums = 0;
 		size_t oldColums = 0;
-
-		while(namesTargetFunction.empty() == false)
+		vector<Fraction> tempTargetFunction = _targetFunction;
+		while(namesInitialVariable.empty() == false)
 		{
 			for(size_t i = 0; i < _rows; i++)
 			{
-				if(namesTargetFunction.back() == _namesRows[i])
+				if(namesInitialVariable.back() == _namesRows[i])
 				{
 					for(size_t j = 0; j < _colums; j++)
 					{
-						_matrix[_rows - 1][j] = _matrix[i][j] * _targetFunction.back() + _matrix[_rows - 1][j];
+						_matrix[_rows - 1][j] = _matrix[i][j] * tempTargetFunction.back() + _matrix[_rows - 1][j];
 					}
 					
-					_targetFunction.pop_back();
-					namesTargetFunction.pop_back();
+					tempTargetFunction.pop_back();
+					namesInitialVariable.pop_back();
 					break;
 				}
 			}
@@ -1018,7 +1042,7 @@ int main()
 //r5 0 0 5 - 2 0 0 0 0 0 0 0 0 0 0 1
 //Z 550 3 3 - 1 0 0 0 - 1 - 1 - 1 0 0 0 0 0
 
-//30 20 50 max
+//3 20 50 max
 //2 3 5 <= 4000
 //4 2 7 <= 6000
 //6 3 2 <= 9000
@@ -1027,6 +1051,7 @@ int main()
 //0 0 1 >= 150
 //2 - 3 0 = 0
 //0 5 - 2 = 0
+
 
 //4 2 0 0 min
 //3 1 0 0 = 3
