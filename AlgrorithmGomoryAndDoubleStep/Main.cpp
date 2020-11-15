@@ -369,24 +369,24 @@ class Simplex:Slitter
 
 	bool IsMaxType(size_t i, size_t j)
 	{
-		return _matrix[j][i] < 0;
+		return _matrix[i][j] < 0;
 	}
 
 	bool IsMinType(size_t i, size_t j)
 	{
-		return _matrix[j][i] > 0;
+		return _matrix[i][j] > 0;
 	}
 
-	bool CheckLastRow(bool (*TypeOfTask)(size_t, size_t))
+	bool CheckLastRow(bool (Simplex::*TypeOfTask)(size_t, size_t))
 	{
 		int countInColum = 0;
 		for(size_t i = 1; i < _columns; i++)
 		{
-			if(_matrix[_rows - 1][i] > 0)
+			if((this->*TypeOfTask)(_rows - 1, i))
 			{
 				for(size_t j = 0; j < _rows - 1; j++)
 				{
-					if(TypeOfTask(j, i))
+					if((this->*TypeOfTask)(j, i))
 					{
 						return false;
 					}
@@ -398,43 +398,24 @@ class Simplex:Slitter
 				}
 			}
 		}
-
+		return true;
 	}
 
 	bool IsOptimalPlan()
 	{
-		int countInColum = 0;
 		if(_type == "min")
 		{
-			return CheckLastRow(IsMinType);
+			return CheckLastRow(&Simplex::IsMinType);
 		}
 		else if(_type == "max")
 		{
-			for(size_t i = 1; i < _columns; i++)
-			{
-				if(_matrix[_rows - 1][i] < 0)
-				{
-					for(size_t j = 0; j < _rows - 1; j++)
-					{
-						if(_matrix[j][i] < 0)
-						{
-							return false;
-						}
-						countInColum++;
-					}
-				}
-				if(countInColum == _rows - 1)
-				{
-					ShowInfoNotOptimalPlan("снизу");
-				}
-			}
+			return CheckLastRow(&Simplex::IsMaxType);
 		}
 		else
 		{
 			cout << "Тип задачи должне быть только min или max. Проверьте файл!\n";
 			exit(0);
 		}
-		return true;
 	}
 
 	void ShowInfoNotOptimalPlan(string text)
