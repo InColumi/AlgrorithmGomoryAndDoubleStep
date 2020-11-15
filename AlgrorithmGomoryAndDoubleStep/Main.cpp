@@ -2,6 +2,7 @@
 #include <string>
 #include <fstream>
 #include <vector>
+#include <list>
 
 using namespace std;
 
@@ -324,9 +325,7 @@ class Simplex:Slitter
 			_namesRows[indexRowMinValueInDeferens] = _namesColums[indexColumnNewBazis];
 			DivRowOn(indexRowMinValueInDeferens, _matrix[indexRowMinValueInDeferens][indexColumnNewBazis]);
 			ChangeMatrix(indexColumnNewBazis, indexRowMinValueInDeferens);
-			ShowTable();
 		}
-		ShowTable();
 	}
 
 	vector<vector<Fraction>> GetMatrix()
@@ -377,7 +376,7 @@ class Simplex:Slitter
 		return _matrix[i][j] > 0;
 	}
 
-	bool CheckLastRow(bool (Simplex::*TypeOfTask)(size_t, size_t))
+	bool CheckLastRow(bool (Simplex::* TypeOfTask)(size_t, size_t))
 	{
 		int countInColum = 0;
 		for(size_t i = 1; i < _columns; i++)
@@ -398,6 +397,7 @@ class Simplex:Slitter
 				}
 			}
 		}
+
 		return true;
 	}
 
@@ -471,45 +471,62 @@ class Simplex:Slitter
 
 	int GetIndexMaxCellInZ()
 	{
-		int lastRow = _rows - 1;
-		int index = GetIndexNotZeroInZ();
-		Fraction minMax = _matrix[lastRow][index];
 		if(_type == "min")
 		{
-			for(size_t i = 2; i < _columns; i++)
-			{
-				if(_matrix[lastRow][i] > minMax)
-				{
-					minMax = _matrix[lastRow][i];
-					index = i;
-				}
-			}
+			return GetIndex(&Simplex::IsPositive, &Simplex::IsMatrixMoreThanValue);
 		}
 		else if(_type == "max")
 		{
-			for(size_t i = 2; i < _columns; i++)
-			{
-				if(_matrix[lastRow][i] < minMax)
-				{
-					minMax = _matrix[lastRow][i];
-					index = i;
-				}
-			}
+			return GetIndex(&Simplex::IsNegative, &Simplex::IsMatrixLessThanValue);
 		}
 		else
 		{
 			cout << "Type must be min or max. Check file!\n";
 			exit(0);
 		}
+	}
 
+	bool IsMatrixMoreThanValue(size_t i, size_t j, Fraction value)
+	{
+		return _matrix[i][j] > value;
+	}
+
+	bool IsMatrixLessThanValue(size_t i, size_t j, Fraction value)
+	{
+		return _matrix[i][j] < value;
+	}
+
+	size_t GetIndex(bool (Simplex ::* CheckCell)(size_t, size_t), bool (Simplex ::* Compare)(size_t, size_t, Fraction))
+	{
+		int lastRow = _rows - 1;
+		int index = GetIndexNotZeroInZ(CheckCell);
+		Fraction minMax = _matrix[lastRow][index];
+		for(size_t i = 1; i < _columns; i++)
+		{
+			if((this->*Compare)(lastRow, i, minMax))
+			{
+				minMax = _matrix[lastRow][i];
+				index = i;
+			}
+		}
 		return index;
 	}
 
-	int GetIndexNotZeroInZ()
+	bool IsPositive(size_t i, size_t j)
+	{
+		return _matrix[i][j] > 0;
+	}
+
+	bool IsNegative(size_t i, size_t j)
+	{
+		return _matrix[i][j] < 0;
+	}
+
+	int GetIndexNotZeroInZ(bool (Simplex ::* CheckCell)(size_t, size_t))
 	{
 		for(size_t i = 1; i < _columns; i++)
 		{
-			if(_matrix[_rows - 1][i] != 0)
+			if((this->*CheckCell)(_rows - 1, i))
 			{
 				return i;
 			}
@@ -559,7 +576,6 @@ class DoubleStep: Slitter, Shower
 	const string _nameF = "f";
 	const string _nameLastRow = "T";
 	vector<vector<Fraction>> _matrix;
-	vector<Fraction> _answer;
 	vector<string> _textFromFile;
 	vector<string> _namesColums;
 	vector<string> _namesRows;
@@ -589,41 +605,35 @@ class DoubleStep: Slitter, Shower
 		SetMatrix();
 		SetNamesRows();
 		SetNewZ();
-
 	}
 
 	void Solve()
 	{
 		_rows += 1;
 		SolveSimplex("min");
+		/*if(CheckArtificianlValuesInBazis())
+		{
+			_rows -= 1;
+
+			SolveSimplex(_typeOfTask);
+		}
+		else
+		{
+			MakeLastMatrix();
+			CreateLastRowForSecondStep();
+			SolveSimplex(_typeOfTask);
+			_rows -= 1;
+			SolveSimplex(_typeOfTask);
+		}*/
 		MakeLastMatrix();
-		CreateLastRowForSecondStep();
-
+		_rows -= 1;
 		SolveSimplex(_typeOfTask);
-
-		SetAnswer();
-		ShowVerification();
 	}
 
 	private:
 
-	void ShowVerification()
-	{
-		Fraction answer;
-		cout << _nameLastRow << " (" << _nameInitialVariable << ") = ";
-		for(size_t i = 0; i < _countInitialVariable - 1; i++)
-		{
-			cout << _answer[i] << '*' << _targetFunction[i] << '+';
-			answer = answer + _answer[i] * _targetFunction[i];
-		}
-		cout << _answer[_countInitialVariable - 1] << '*' << _targetFunction[_countInitialVariable - 1];
-		answer = answer + _answer[_countInitialVariable - 1] * _targetFunction[_countInitialVariable - 1];
-		cout << ((answer == _matrix[_rows - 1][0]) ? " == " : " != ") << _matrix[_rows - 1][0] << endl;
-	}
-
 	void SolveSimplex(string typeOfTask)
 	{
-		Show(_matrix, _rows, _colums);
 		Simplex simplex(_matrix, _rows, _colums, typeOfTask, _namesColums, _namesRows);
 		simplex.ShowTable();
 		simplex.Solve();
@@ -632,24 +642,6 @@ class DoubleStep: Slitter, Shower
 		_namesRows = simplex.GetNamesRows();
 		_matrix = simplex.GetMatrix();
 		simplex.ShowTable();
-	}
-
-	void SetAnswer()
-	{
-		vector<string> namesInitialVariable = GetNamesInitialVariable();
-
-		while(namesInitialVariable.empty() == false)
-		{
-			for(size_t i = 0; i < _namesRows.size(); i++)
-			{
-				if(namesInitialVariable.back() == _namesRows[i])
-				{
-					_answer.push_back(_matrix[i][0]);
-					namesInitialVariable.pop_back();
-					break;
-				}
-			}
-		}
 	}
 
 	vector<string> GetNamesInitialVariable()
@@ -829,44 +821,59 @@ class DoubleStep: Slitter, Shower
 
 	void SetNamesRows()
 	{
+		int countBazis = 0;
+		list<size_t> indexesBazis;
+		Show(_matrix, _rows, _colums);
 		for(size_t i = 1; i < _colums; i++)
 		{
 			if(IsBazis(i))
 			{
-				_namesRows.push_back(_namesColums[i]);
+				indexesBazis.push_back(i);
+				countBazis++;
 			}
 		}
-		_namesRows.push_back(_nameF);
-		if(_namesRows.size() != _rows)
+
+		size_t index = 0;
+		while(indexesBazis.empty() == false)
+		{
+			for(list<size_t>::iterator iter = indexesBazis.begin(); iter != indexesBazis.end(); iter++)
+			{
+				if(_matrix[index][*iter] == 1)
+				{
+					_namesRows.push_back(_namesColums[*iter]);
+					indexesBazis.erase(iter);
+					index++;
+					break;
+				}
+			}
+		}
+
+		if(countBazis != _rows - 1)
 		{
 			cout << "Кол-во базисных векторов не равно кол-ву ограничений!\n";
 			exit(0);
 		}
+
+		_namesRows.push_back(_nameF);
 		_namesRows.push_back(_nameLastRow);
 	}
 
 	bool IsBazis(size_t indexCol)
 	{
-		Fraction number = 0;
 		int countZero = 0;
-		int countAnotherValue = 0;
+		int countOne = 0;
 		for(size_t i = 0; i < _rows; i++)
 		{
-			if(countAnotherValue == 2)
-			{
-				return false;
-			}
 			if(_matrix[i][indexCol] == 0)
 			{
 				countZero++;
 			}
-			else
+			if(_matrix[i][indexCol] == 1)
 			{
-				number = _matrix[i][indexCol];
-				countAnotherValue++;
+				countOne++;
 			}
 		}
-		return number == 1;
+		return (countZero + countOne) == _rows;
 	}
 
 	void SetMatrix()
@@ -1083,7 +1090,7 @@ int main()
 //0 5 - 2 = 0
 
 
-//4 2 0 0 min
+//4 1 0 0 min
 //3 1 0 0 = 3
 //4 3 -1 0 = 6
 //1 2 0 1 = 4
