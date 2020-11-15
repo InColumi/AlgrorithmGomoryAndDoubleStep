@@ -26,7 +26,7 @@ class Shower
 		{
 			for(size_t j = 0; j < colums; j++)
 			{
-				cout << matr[i][j] << '\t';
+				cout << matr[i][j] << "\t";
 			}
 			cout << '\n';
 		}
@@ -76,7 +76,7 @@ class Fraction
 	private:
 	int _numerator;
 	int _denominator;
-	//int _wholePart;
+
 	public:
 	Fraction(): _numerator(), _denominator(1) {}
 
@@ -324,7 +324,9 @@ class Simplex:Slitter
 			_namesRows[indexRowMinValueInDeferens] = _namesColums[indexColumnNewBazis];
 			DivRowOn(indexRowMinValueInDeferens, _matrix[indexRowMinValueInDeferens][indexColumnNewBazis]);
 			ChangeMatrix(indexColumnNewBazis, indexRowMinValueInDeferens);
+			ShowTable();
 		}
+		ShowTable();
 	}
 
 	vector<vector<Fraction>> GetMatrix()
@@ -344,18 +346,19 @@ class Simplex:Slitter
 
 	void ShowTable()
 	{
-		cout << "Базис\t";
+		string space = "\t";
+		cout << "Базис" << space;
 		for(size_t i = 0; i < _namesColums.size(); i++)
 		{
-			cout << _namesColums[i] << '\t';
+			cout << _namesColums[i] << space;
 		}
 		cout << '\n';
 		for(size_t i = 0; i < _rows; i++)
 		{
-			cout << _namesRows[i] << '\t';
+			cout << _namesRows[i] << space;
 			for(size_t j = 0; j < _columns; j++)
 			{
-				cout << _matrix[i][j] << '\t';
+				cout << _matrix[i][j] << space;
 			}
 			cout << '\n';
 		}
@@ -364,29 +367,46 @@ class Simplex:Slitter
 
 	private:
 
+	bool IsMaxType(size_t i, size_t j)
+	{
+		return _matrix[j][i] < 0;
+	}
+
+	bool IsMinType(size_t i, size_t j)
+	{
+		return _matrix[j][i] > 0;
+	}
+
+	bool CheckLastRow(bool (*TypeOfTask)(size_t, size_t))
+	{
+		int countInColum = 0;
+		for(size_t i = 1; i < _columns; i++)
+		{
+			if(_matrix[_rows - 1][i] > 0)
+			{
+				for(size_t j = 0; j < _rows - 1; j++)
+				{
+					if(TypeOfTask(j, i))
+					{
+						return false;
+					}
+					countInColum++;
+				}
+				if(countInColum == _rows - 1)
+				{
+					ShowInfoNotOptimalPlan("снизу");
+				}
+			}
+		}
+
+	}
+
 	bool IsOptimalPlan()
 	{
 		int countInColum = 0;
 		if(_type == "min")
 		{
-			for(size_t i = 1; i < _columns; i++)
-			{
-				if(_matrix[_rows - 1][i] > 0)
-				{
-					for(size_t j = 0; j < _rows - 1; j++)
-					{
-						if(_matrix[j][i] > 0)
-						{
-							return false;
-						}
-						countInColum++;
-					}
-					if(countInColum == _rows - 1)
-					{
-						ShowInfoNotOptimalPlan("снизу");
-					}
-				}
-			}
+			return CheckLastRow(IsMinType);
 		}
 		else if(_type == "max")
 		{
@@ -555,7 +575,8 @@ class DoubleStep: Slitter, Shower
 	const string _nameInitialVariable = "x";
 	const string _nameSimpleVariable = "s";
 	const string _nameArtificialVariable = "r";
-	const string _nameLastRow = "Z";
+	const string _nameF = "f";
+	const string _nameLastRow = "T";
 	vector<vector<Fraction>> _matrix;
 	vector<Fraction> _answer;
 	vector<string> _textFromFile;
@@ -592,8 +613,8 @@ class DoubleStep: Slitter, Shower
 
 	void Solve()
 	{
+		_rows += 1;
 		SolveSimplex("min");
-
 		MakeLastMatrix();
 		CreateLastRowForSecondStep();
 
@@ -621,6 +642,7 @@ class DoubleStep: Slitter, Shower
 
 	void SolveSimplex(string typeOfTask)
 	{
+		Show(_matrix, _rows, _colums);
 		Simplex simplex(_matrix, _rows, _colums, typeOfTask, _namesColums, _namesRows);
 		simplex.ShowTable();
 		simplex.Solve();
@@ -766,7 +788,7 @@ class DoubleStep: Slitter, Shower
 
 		for(size_t i = 0; i < _colums; i++)
 		{
-			_matrix[_rows - 1][i] = z[i];
+			_matrix[_rows][i] = z[i];
 		}
 	}
 
@@ -833,12 +855,13 @@ class DoubleStep: Slitter, Shower
 				_namesRows.push_back(_namesColums[i]);
 			}
 		}
-		_namesRows.push_back(_nameLastRow);
+		_namesRows.push_back(_nameF);
 		if(_namesRows.size() != _rows)
 		{
 			cout << "Кол-во базисных векторов не равно кол-ву ограничений!\n";
 			exit(0);
 		}
+		_namesRows.push_back(_nameLastRow);
 	}
 
 	bool IsBazis(size_t indexCol)
@@ -870,8 +893,7 @@ class DoubleStep: Slitter, Shower
 		_matrix.clear();
 		_colums = _countInitialVariable + _countSimpleVariable + _countArtificialVariable + 1;
 		vector<string> splittedLine;
-		size_t size;
-		for(size_t i = 0; i < _rows; i++)
+		for(size_t i = 0; i < _rows + 1; i++)
 		{
 			_matrix.push_back(vector<Fraction>(_colums));
 		}
@@ -887,6 +909,12 @@ class DoubleStep: Slitter, Shower
 				_matrix[i - 1][j + 1] = stoi(splittedLine[j]);
 			}
 			splittedLine.clear();
+		}
+
+
+		for(size_t i = 0; i < _countInitialVariable; i++)
+		{
+			_matrix[_rows - 1][i + 1] = _targetFunction[i] * -1;
 		}
 
 		int index;
@@ -1047,12 +1075,6 @@ int main()
 
 	DoubleStep doubleStep("input.txt");
 	doubleStep.Solve();
-	//Simplex s("inputSimplex.txt");
-	//s.Solve();
-
-	/*Fraction a(3, 4);
-	Fraction b(2, 4);
-	cout << (a < b) << endl;*/
 
 	return 0;
 }
