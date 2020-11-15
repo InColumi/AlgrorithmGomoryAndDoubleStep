@@ -19,34 +19,6 @@ class Shower
 		}
 		cout << '\n';
 	}
-
-	template <typename T>
-	void Show(T& matr, size_t rows, size_t colums)
-	{
-		for(size_t i = 0; i < rows; i++)
-		{
-			for(size_t j = 0; j < colums; j++)
-			{
-				cout << matr[i][j] << "\t";
-			}
-			cout << '\n';
-		}
-		cout << '\n';
-	}
-
-	template <typename T>
-	void Show(T**& matr, size_t rows, size_t colums)
-	{
-		for(size_t i = 0; i < rows; i++)
-		{
-			for(size_t j = 0; j < colums; j++)
-			{
-				cout << matr[i][j] << '\t';
-			}
-			cout << '\n';
-		}
-		cout << '\n';
-	}
 };
 
 class Slitter
@@ -397,7 +369,6 @@ class Simplex:Slitter
 				}
 			}
 		}
-
 		return true;
 	}
 
@@ -611,20 +582,6 @@ class DoubleStep: Slitter, Shower
 	{
 		_rows += 1;
 		SolveSimplex("min");
-		/*if(CheckArtificianlValuesInBazis())
-		{
-			_rows -= 1;
-
-			SolveSimplex(_typeOfTask);
-		}
-		else
-		{
-			MakeLastMatrix();
-			CreateLastRowForSecondStep();
-			SolveSimplex(_typeOfTask);
-			_rows -= 1;
-			SolveSimplex(_typeOfTask);
-		}*/
 		MakeLastMatrix();
 		_rows -= 1;
 		SolveSimplex(_typeOfTask);
@@ -647,7 +604,6 @@ class DoubleStep: Slitter, Shower
 	vector<string> GetNamesInitialVariable()
 	{
 		vector<string> namesInitialVariable;
-
 		for(size_t i = 0; i < _countInitialVariable; i++)
 		{
 			namesInitialVariable.push_back(_namesColums[_countInitialVariable - i]);
@@ -661,7 +617,6 @@ class DoubleStep: Slitter, Shower
 		{
 			_matrix[_rows - 1][i + 1] = _targetFunction[i] * -1;
 		}
-		size_t indexRow = 0;
 
 		vector<string> namesInitialVariable = GetNamesInitialVariable();
 		string temp;
@@ -684,7 +639,6 @@ class DoubleStep: Slitter, Shower
 					{
 						_matrix[_rows - 1][j] = _matrix[i][j] * tempTargetFunction.back() + _matrix[_rows - 1][j];
 					}
-
 					tempTargetFunction.pop_back();
 					namesInitialVariable.pop_back();
 					break;
@@ -823,7 +777,6 @@ class DoubleStep: Slitter, Shower
 	{
 		int countBazis = 0;
 		list<size_t> indexesBazis;
-		Show(_matrix, _rows, _colums);
 		for(size_t i = 1; i < _colums; i++)
 		{
 			if(IsBazis(i))
