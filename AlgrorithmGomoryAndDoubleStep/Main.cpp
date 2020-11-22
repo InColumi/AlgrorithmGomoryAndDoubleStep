@@ -6,9 +6,33 @@
 
 using namespace std;
 
+class Reader
+{
+public:
+	vector<string> GetTextFromFile(const string fileName)
+	{
+		ifstream in;
+		in.open(fileName);
+		if(in.is_open() == false)
+		{
+			cout << "Файл не найден.\n";
+			exit(0);
+		}
+
+		string line;
+		vector<string> text;
+		while(getline(in, line))
+		{
+			text.push_back(line);
+		}
+		in.close();
+		return text;
+	}
+};
+
 class Shower
 {
-	public:
+public:
 	template <typename T>
 	void Show(T& matr)
 	{
@@ -23,7 +47,7 @@ class Shower
 
 class Slitter
 {
-	protected:
+protected:
 	void Split(vector<string>& strings, string& line, char splitter = ' ')
 	{
 		size_t size = line.size();
@@ -46,11 +70,11 @@ class Slitter
 
 class Fraction
 {
-	private:
+private:
 	int _numerator;
 	int _denominator;
 
-	public:
+public:
 	Fraction(): _numerator(), _denominator(1) {}
 
 	Fraction(int numerator): _numerator(numerator), _denominator(1) {}
@@ -211,7 +235,7 @@ class Fraction
 		return _denominator;
 	}
 
-	private:
+private:
 
 	void ReduceAndReves(Fraction& f)
 	{
@@ -268,7 +292,7 @@ class Fraction
 
 class Simplex:Slitter
 {
-	private:
+private:
 	vector<vector<Fraction>> _matrix;
 	size_t _rows;
 	size_t _columns;
@@ -276,7 +300,7 @@ class Simplex:Slitter
 	vector<string> _namesColums;
 	vector<string> _namesRows;
 
-	public:
+public:
 	Simplex(vector<vector<Fraction>> matrix, size_t rows, size_t columns, string type, vector<string> namesColums, vector<string>& namesRows)
 	{
 		_matrix = matrix;
@@ -336,7 +360,7 @@ class Simplex:Slitter
 		cout << '\n';
 	}
 
-	private:
+private:
 
 	bool IsMaxType(size_t i, size_t j)
 	{
@@ -507,12 +531,12 @@ class Simplex:Slitter
 
 class Cell
 {
-	private:
+private:
 	string _name;
 	size_t _indexName;
 	int _value;
 
-	public:
+public:
 	Cell(): _name(), _indexName(), _value() {};
 	Cell(string name, size_t indexName, int value): _name(name), _indexName(indexName), _value(value) {}
 
@@ -538,9 +562,9 @@ class Cell
 	}
 };
 
-class DoubleStep: Slitter, Shower
+class DoubleStep: Slitter, Shower, Reader
 {
-	private:
+private:
 	const string _nameInitialVariable = "x";
 	const string _nameSimpleVariable = "s";
 	const string _nameArtificialVariable = "r";
@@ -559,10 +583,10 @@ class DoubleStep: Slitter, Shower
 	size_t _rows;
 	size_t _colums;
 
-	public:
+public:
 	DoubleStep(const string fileName)
 	{
-		_textFromFile = ReadFromFile(fileName);
+		_textFromFile = GetTextFromFile(fileName);
 		SetTargetFunction(_textFromFile[0]);
 		SetCountInitialVariable(_textFromFile[1]);
 		CheckCorrectInput();
@@ -585,9 +609,49 @@ class DoubleStep: Slitter, Shower
 		MakeLastMatrix();
 		_rows -= 1;
 		SolveSimplex(_typeOfTask);
+		CheckOptimalSolve();
 	}
 
-	private:
+private:
+
+	void CheckOptimalSolve()
+	{
+		for(size_t i = 0; i < _rows - 1; i++)
+		{
+			if(_matrix[i][0].GetDenominator() > 1)
+			{
+				size_t countVariables = 0;
+				for(size_t j = 1; j < _colums; j++)
+				{
+					if(_matrix[i][j].GetDenominator() > 1)
+					{
+						countVariables++;
+					}
+				}
+				if(countVariables == 0)
+				{
+					cout << "Задача не разрешима!\nв последней симплекс-таблице в строке для дробной переменной все коэффициенты целые.\n";
+					exit(0);
+				}
+			}
+		}
+		cout << ((GetMaxFracrtionalPartInBazis() == 1) ? "Решение является оптимальным!\n" : "Решение НЕ является оптимальным!\n");
+	}
+
+	size_t GetMaxFracrtionalPartInBazis()
+	{
+		int maxDenominator = _matrix[0][0].GetDenominator();
+		size_t indexMaxDenominator = 0;
+		for(size_t i = 1; i < _rows - 1; i++)
+		{
+			if(_matrix[i][0].GetDenominator() > maxDenominator)
+			{
+				maxDenominator = _matrix[i][0].GetDenominator();
+				indexMaxDenominator = i;
+			}
+		}
+		return indexMaxDenominator;
+	}
 
 	void SolveSimplex(string typeOfTask)
 	{
@@ -988,32 +1052,12 @@ class DoubleStep: Slitter, Shower
 			exit(0);
 		}
 	}
-
-	vector<string> ReadFromFile(const string fileName)
-	{
-		ifstream in;
-		in.open(fileName);
-		if(in.is_open() == false)
-		{
-			cout << "Файл не найден.\n";
-			exit(0);
-		}
-
-		string line;
-		vector<string> text;
-		while(getline(in, line))
-		{
-			text.push_back(line);
-		}
-		in.close();
-		return text;
-	}
 };
+
 
 int main()
 {
 	setlocale(LC_ALL, "rus");
-
 	DoubleStep doubleStep("input.txt");
 	doubleStep.Solve();
 
