@@ -158,6 +158,11 @@ public:
 		return result;
 	}
 
+	Fraction GetFractionalPart()
+	{
+		return Fraction(_numerator % _denominator, _denominator);
+	}
+
 	bool operator > (const Fraction& f)
 	{
 		if(_denominator == f._denominator)
@@ -609,17 +614,89 @@ public:
 		MakeLastMatrix();
 		_rows -= 1;
 		SolveSimplex(_typeOfTask);
-		CheckOptimalSolve();
+		_namesRows.pop_back();
+		while(CheckOptimalSolve() == false)
+		{
+			SolveMethodGomory();
+		}
 	}
 
 private:
 
-	void CheckOptimalSolve()
+	void SolveMethodGomory()
 	{
+		
+		size_t indexRow = GetIndexMaxFracrtionalPartInBazis();
+		_rows++;
+		vector<Fraction> newLine(_colums + 1);
+		newLine[_colums] = 1;
+		for(size_t i = 0; i < _colums; i++)
+		{
+			Fraction cell = _matrix[indexRow][i];
+			if(cell >= 0)
+			{
+				newLine[i] = cell.GetFractionalPart();
+			}
+			else
+			{
+				int div = cell.GetNumerator() / cell.GetDenominator();
+				newLine[i] = (abs(cell.GetNumerator() / (float) cell.GetDenominator()) > 0) ? div : div + 1;
+			}
+		}
+		newLine[0] = _matrix[indexRow][0].GetFractionalPart();
+
+		if(newLine[0] < 0)
+		{
+			for(size_t i = 0; i < _colums + 1; i++)
+			{
+				newLine[i] = newLine[i];
+			}
+		}
+		_countSimpleVariable++;
+		_namesColums.push_back(_nameSimpleVariable + to_string(_countSimpleVariable));
+		_namesRows.push_back(_nameF);
+		_namesRows[_namesRows.size() - 2] = _namesColums.back();
+
+
+		vector<vector<Fraction>> newMatrix(_rows);
+		for(size_t i = 0; i < _rows; i++)
+		{
+			newMatrix[i] = vector<Fraction>(_colums + 1);
+		}
+
+		for(size_t i = 0; i < _rows - 2; i++)
+		{
+			for(size_t j = 0; j < _colums; j++)
+			{
+				newMatrix[i][j] = _matrix[i][j];
+			}
+		}
+
+		for(size_t i = 0; i < _colums; i++)
+		{
+			newMatrix[_rows - 2][i] = newLine[i];
+		}
+		newMatrix[_rows - 2][_colums] = newLine[_colums];
+
+
+		for(size_t i = 0; i < _colums; i++)
+		{
+			newMatrix[_rows - 1][i] = _matrix[_rows - 2][i] * (-1);
+		}
+
+		_matrix = newMatrix;
+		_colums++;
+		SolveSimplex(_typeOfTask);
+	}
+
+	bool CheckOptimalSolve()
+	{
+		bool isEnd = true;
 		for(size_t i = 0; i < _rows - 1; i++)
 		{
 			if(_matrix[i][0].GetDenominator() > 1)
 			{
+				isEnd = false;
 				size_t countVariables = 0;
 				for(size_t j = 1; j < _colums; j++)
 				{
@@ -635,18 +712,19 @@ private:
 				}
 			}
 		}
-		cout << ((GetMaxFracrtionalPartInBazis() == 1) ? "Решение является оптимальным!\n" : "Решение НЕ является оптимальным!\n");
+		cout << ((isEnd) ? "Решение является оптимальным!\n" : "Решение НЕ является оптимальным!\n");
+		return isEnd;
 	}
 
-	size_t GetMaxFracrtionalPartInBazis()
+	size_t GetIndexMaxFracrtionalPartInBazis()
 	{
-		int maxDenominator = _matrix[0][0].GetDenominator();
+		Fraction fracrtionalPart = _matrix[0][0].GetFractionalPart();
 		size_t indexMaxDenominator = 0;
 		for(size_t i = 1; i < _rows - 1; i++)
 		{
-			if(_matrix[i][0].GetDenominator() > maxDenominator)
+			if(_matrix[i][0].GetFractionalPart() > fracrtionalPart)
 			{
-				maxDenominator = _matrix[i][0].GetDenominator();
+				fracrtionalPart = _matrix[i][0].GetFractionalPart();
 				indexMaxDenominator = i;
 			}
 		}
@@ -1076,7 +1154,7 @@ int main()
 //r5 0 0 5 - 2 0 0 0 0 0 0 0 0 0 0 1
 //Z 550 3 3 - 1 0 0 0 - 1 - 1 - 1 0 0 0 0 0
 
-//3 20 50 max
+//30 20 50 max
 //2 3 5 <= 4000
 //4 2 7 <= 6000
 //6 3 2 <= 9000
