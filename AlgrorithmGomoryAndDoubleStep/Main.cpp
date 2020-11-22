@@ -392,7 +392,7 @@ private:
 					}
 					countInColum++;
 				}
-				if(countInColum == _rows - 1)
+				if(countInColum != _rows - 1)
 				{
 					ShowInfoNotOptimalPlan("снизу");
 				}
@@ -625,7 +625,7 @@ private:
 
 	void SolveMethodGomory()
 	{
-		
+
 		size_t indexRow = GetIndexMaxFracrtionalPartInBazis();
 		_rows++;
 		vector<Fraction> newLine(_colums + 1);
@@ -640,7 +640,7 @@ private:
 			else
 			{
 				int div = cell.GetNumerator() / cell.GetDenominator();
-				newLine[i] = (abs(cell.GetNumerator() / (float) cell.GetDenominator()) > 0) ? div : div + 1;
+				newLine[i] = (abs(cell.GetNumerator()) / (float) cell.GetDenominator() > 0) ? cell + 1 : div;
 			}
 		}
 		newLine[0] = _matrix[indexRow][0].GetFractionalPart();
@@ -656,7 +656,6 @@ private:
 		_namesColums.push_back(_nameSimpleVariable + to_string(_countSimpleVariable));
 		_namesRows.push_back(_nameF);
 		_namesRows[_namesRows.size() - 2] = _namesColums.back();
-
 
 		vector<vector<Fraction>> newMatrix(_rows);
 		for(size_t i = 0; i < _rows; i++)
@@ -1169,3 +1168,8 @@ int main()
 //3 1 0 0 = 3
 //4 3 -1 0 = 6
 //1 2 0 1 = 4
+
+//3 2 max
+//1 1 <= 13
+//1 -1 <= 6
+//-3 1<=9
